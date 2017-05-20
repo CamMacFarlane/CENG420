@@ -1,0 +1,14 @@
+Q1.1)
+Answer: The branching factor would be 9, and it is uniform.
+
+Q1.2)
+Answer: see excel file
+
+Q1.3)
+Answer:
+I think A* search is a good enough approach for this game. 
+Since this is a only 3 by 3 board game, the search space won't be too big.
+Also, it is likely to enter a loop or cycle, therefore, we can not use DFS.
+By giving a good heuristic function, the program should be able to determine
+when to play defensively (usually only one option) or aggresively (need to 
+find out which move can lead to a goal or closer to a goal).
