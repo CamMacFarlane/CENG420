@@ -12,3 +12,27 @@ Also, it is likely to enter a loop or cycle, therefore, we can not use DFS.
 By giving a good heuristic function, the program should be able to determine
 when to play defensively (usually only one option) or aggresively (need to 
 find out which move can lead to a goal or closer to a goal).
+
+Q1.4)
+Answer:
+
+Heuristic function:
+- each token should have a score, and this score may depend on the following:
+  1. is this token connected to another token
+  2. is this token blocking the opponent's tokens
+  3. score schema for opponent's tokens will be the same, but negative
+
+- the heuristic function for each board state will return sum of the scores of 
+  all tokens (including opponents), hiher score -> higher chance to win
+  
+
+Q1.5)
+Answer:
+
+It is possible to have cycles, one example would be:
+ 0|1|1      0|1|1    0|1|1     0|1|1    0|1|1     0|1|1
+ 1|2|0  ->  0|2|1 -> 2|0|1  -> 2|1|0 -> 0|1|2  -> 1|0|2
+ 0|2|2      0|2|2    0|2|2     0|2|2    0|2|2     0|2|2
+   ^                                                |
+   |                                                |
+   -----<-----------------------<--------------------
