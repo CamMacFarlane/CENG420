@@ -3,8 +3,8 @@ import time
 x_len = 3
 y_len = 3
 horzLine = "----"*x_len
-debug = False
-gameBoard = [[' ' for k in range(x_len)] for k in range(y_len)]
+debug = True
+mainBoard = [[' ' for k in range(x_len)] for k in range(y_len)]
 
 
 #prints the state passed
@@ -19,27 +19,27 @@ def printState(state):
         print(" ",horzLine)
 
 #returns True if the move was valid
-def move(player, curX, curY, newX, newY):
+def move(player, curX, curY, newX, newY, state=mainBoard, quiet = False):
     ret  = False
-    if(gameBoard[curY][curX] != player):
+    if(state[curY][curX] != player):
         if(debug):
             print("INVALID MOVE: not your piece")
-    elif(gameBoard[newY][newX] != ' '):
+    elif(state[newY][newX] != ' '):
         if(debug):
             print("INVALID MOVE: space is not free")
     else:
-        swap = gameBoard[curY][curX]
-        gameBoard[curY][curX] = gameBoard[newY][newX]
-        gameBoard[newY][newX] = swap
-        print("Player", player, "moves: (",curX, "," , curY , ")", "to", "(", newX, ",", newY, ")")
+        swap = state[curY][curX]
+        state[curY][curX] = state[newY][newX]
+        state[newY][newX] = swap
+        if not quiet: print("Player", player, "moves: (",curX, "," , curY , ")", "to", "(", newX, ",", newY, ")")
         ret = True
     return ret
 
-def checkGoalState(player):
+def checkGoalState(player, state=mainBoard, quiet=False):
     #horizontal
     for k in range(y_len):
-        if(gameBoard[k] == [player]*x_len):
-            print("horizontal line for ", player,"!")
+        if(state[k] == [player]*x_len):
+            if not quiet: print("horizontal line for ", player,"!")
             return True
     
     #vertical
@@ -47,33 +47,33 @@ def checkGoalState(player):
     for i in range(x_len):
         col = ""
         for k in range(y_len):
-            col += gameBoard[k][i]
+            col += state[k][i]
             if(col == player*x_len):
-                print("vertical line for ", player,"!")
+                if not quiet: print("vertical line for ", player,"!")
                 return True
     
     #diagonal
-    if(gameBoard[0][0] == player):
-        if(gameBoard[1][1] == player):
-            if(gameBoard[2][2] == player):
-                print("Diagonal line for ", player,"!")
+    if(state[0][0] == player):
+        if(state[1][1] == player):
+            if(state[2][2] == player):
+                if not quiet: print("Diagonal line for ", player,"!")
                 return True
-    if(gameBoard[0][2] == player):
-        if(gameBoard[1][1] == player):
-            if(gameBoard[2][0] == player):
-                print("Diagonal line for ", player,"!")
+    if(state[0][2] == player):
+        if(state[1][1] == player):
+            if(state[2][0] == player):
+                if not quiet: print("Diagonal line for ", player,"!")
                 return True
 
 #populates board to beginning game state
-def populateBoard():
+def populateBoard(state=mainBoard):
     for i in range(x_len):
-        gameBoard[0][i] = "X" 
-        gameBoard[x_len - 1 ][i] = 'O'
+        state[0][i] = "X" 
+        state[x_len - 1 ][i] = 'O'
 
 
-def randomDance():
+def randomDance(state=mainBoard):
     populateBoard()
-    printState(gameBoard)
+    printState(state)
     while(True):
         Attempt = 0
         time.sleep(0.1)
@@ -82,7 +82,7 @@ def randomDance():
             Attempt = Attempt +1
             print("Attempt = ", Attempt , "\r", end="")
         
-        printState(gameBoard)
+        printState(state)
         if(checkGoalState('O')):
             time.sleep(2)
         
@@ -93,7 +93,7 @@ def randomDance():
             Attempt = Attempt +1
             print("Attempt = ", Attempt , "\r", end="")
 
-        printState(gameBoard)
+        printState(state)
         if(checkGoalState('X')):
             time.sleep(2)
 

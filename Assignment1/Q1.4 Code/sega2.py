@@ -3,7 +3,7 @@ import time
 import random
 x_len = sega1.x_len
 y_len = sega1.y_len
-gameBoard = sega1.gameBoard
+gameBoard = sega1.mainBoard
 
 """
 Blocking detection: horizontal, vertical, diagonal:
@@ -141,7 +141,7 @@ def score(state, player):
         for y in range(y_len):
             if state[y][x] == player:
                 score += ( num_inrow(player, state, x, y) + num_incol(player, state, x, y) + num_diag(player, state, x, y) + blocking_row(player, state, y) + blocking_col(player, state, x) + blocking_diag(player, state, x, y))
-    if(sega1.checkGoalState(player) == True):
+    if(sega1.checkGoalState(player, state, quiet=True) == True):
         score += 1000       
     return score
     
@@ -192,4 +192,72 @@ while(True):
     print("\n\nX's net score for board: %i\n" % (heuristic(gameBoard, 'X')))
     if(sega1.checkGoalState('X')):
         time.sleep(10)
-"""
+""" 
+
+#PERMUTATIONS AND MOVE EVALUATION
+#initialize lists to hold coordinates of empty and filled spaces
+
+def buildPermutations(player, state):  # returns a list of the possible next states
+    spaces = []
+    filled = []
+    boards = []
+    if player=='X':
+        opponent='O'
+    else:
+        opponent = 'X'
+    for x in range(x_len):
+        for y in range(y_len):
+            if state[y][x] == ' ':
+                spaces.append([x,y])
+            elif state[y][x] == player:
+                filled.append([x,y])
+                
+#    print(spaces)
+    for piece in range(len(filled)):
+        for space in range(len(spaces)):
+            tmp_board = [x[:] for x in state]
+#           print("moving piece from %i, %i to %i, %i" % (filled[piece][0], filled[piece][1], spaces[space][0], spaces[space][1]))
+            sega1.move(player, filled[piece][0], filled[piece][1], spaces[space][0], spaces[space][1], state=tmp_board, quiet=True)
+#           sega1.printState(tmp_board)
+            boards.append(tmp_board)
+    return boards
+
+def analyzePermutations(player, states, board):                 #takes the heuristic score of each optional state and moves to the highest scoring
+    scores = [' ' for k in range(len(states))]
+    for state in range(len(states)):
+        scores[state] = heuristic(states[state], player)
+    selected_state = scores.index(max(scores))
+    print("\nMy turn!\n")
+    return states[selected_state]
+
+
+
+# Test Case
+#start game
+
+sega1.populateBoard()
+print("\nStarting Game! 3x3 Sega!\n")
+sega1.printState(gameBoard)
+firstmove = True
+while(not sega1.checkGoalState('X', state=gameBoard, quiet=True) and not sega1.checkGoalState('O', state=gameBoard, quiet=True) or firstmove):
+    firstmove = False
+    # take and perform user's move
+    moves = input("enter to and from coordinates for X, 4 numbers, separated by spaces: ")
+    move = moves.split()
+    sega1.move('X', int(move[0]), int(move[1]), int(move[2]), int(move[3]), gameBoard)
+    sega1.printState(gameBoard)
+    sega1.checkGoalState('X', state=gameBoard)
+    #computer's turn
+    boards = buildPermutations('O', gameBoard)
+    new_board = analyzePermutations('O', boards, gameBoard)
+    gameBoard = [x[:] for x in new_board]
+    sega1.printState(gameBoard)
+    sega1.checkGoalState('O', state=gameBoard)
+    
+
+
+
+
+
+
+
