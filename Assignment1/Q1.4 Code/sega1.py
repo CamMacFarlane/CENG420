@@ -39,7 +39,7 @@ def checkGoalState(player, state=mainBoard, quiet=False):
     #horizontal
     for k in range(y_len):
         if(state[k] == [player]*x_len):
-            if not quiet: print("horizontal line for ", player,"!")
+            if not quiet: print("\nhorizontal line for ", player,"!")
             return True
     
     #vertical
@@ -49,19 +49,19 @@ def checkGoalState(player, state=mainBoard, quiet=False):
         for k in range(y_len):
             col += state[k][i]
             if(col == player*x_len):
-                if not quiet: print("vertical line for ", player,"!")
+                if not quiet: print("\nvertical line for ", player,"!")
                 return True
     
     #diagonal
     if(state[0][0] == player):
         if(state[1][1] == player):
             if(state[2][2] == player):
-                if not quiet: print("Diagonal line for ", player,"!")
+                if not quiet: print("\nDiagonal line for ", player,"!")
                 return True
     if(state[0][2] == player):
         if(state[1][1] == player):
             if(state[2][0] == player):
-                if not quiet: print("Diagonal line for ", player,"!")
+                if not quiet: print("\nDiagonal line for ", player,"!")
                 return True
 
 #populates board to beginning game state
