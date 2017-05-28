@@ -31,7 +31,7 @@ def move(player, curX, curY, newX, newY, state=mainBoard, quiet = False):
         swap = state[curY][curX]
         state[curY][curX] = state[newY][newX]
         state[newY][newX] = swap
-        if not quiet: print("Player", player, "moves: (",curX, "," , curY , ")", "to", "(", newX, ",", newY, ")")
+        if not quiet: print("\nPlayer", player, "moves: (",curX, "," , curY , ")", "to", "(", newX, ",", newY, ")\n")
         ret = True
     return ret
 

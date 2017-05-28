@@ -4,6 +4,7 @@ import random
 x_len = sega1.x_len
 y_len = sega1.y_len
 gameBoard = sega1.mainBoard
+debug = False
 
 """
 Blocking detection: horizontal, vertical, diagonal:
@@ -47,13 +48,11 @@ def blocking_row(player, state, y):     # determines if player is blocking oppon
         return 0
 
 def blocking_diag(player, state, x, y):     #assumes a square board
-    if(x != y & ((x+y) != (x_len-1))):
-        return 0
     if player=='X':
         opponent='O'
     else:
         opponent = 'X'
-    #diagonal uppper right to lower left
+    #diagonal uppper left to lower right
     if(x==y):
         count_player = 0
         count_opponent = 0
@@ -80,7 +79,7 @@ def blocking_diag(player, state, x, y):     #assumes a square board
             return 5
         else:
             return 0
-
+    return 0
             
 """
 num_inrow / num_incol:
@@ -189,12 +188,15 @@ def analyzePermutations(player, states, board):                 # takes the heur
         scores[state] = heuristic(states[state], player)
     selected_state = scores.index(max(scores))
     print("\nMy turn!\n")
+    if(debug):
+        for i in range(len(states)):
+            if(debug): 
+                sega1.printState(states[i])
+                print("\n score: ", scores[i], "\n")
     return states[selected_state]                               # returns new gameboard
-
-
+    
 # start game
 # loops and alternates human and computer moves until there is a winner. 
-
 
 sega1.populateBoard()
 print("\nStarting Game! 3x3 Sega!\n")
