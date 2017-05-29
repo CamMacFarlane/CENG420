@@ -33,11 +33,12 @@ l = {   0:'Internet',
 
 # Node Colouring
 colours = ['r' for x in range(0,19)]
-colours[10] = 'b';
-colours[12] = 'b';
-colours[15] = 'b';
-colours[17] = 'b';
-colours[18] = 'b';
+goal = '#fcc41b'
+colours[10] = goal;
+colours[12] = goal;
+colours[15] = goal;
+colours[17] = goal;
+colours[18] = goal;
 
 # Edge assignment
 
@@ -89,8 +90,8 @@ G.add_edge(11,14,weight=410)
 G.add_edge(13,10,weight=610)
 
 # 14: Private Network
-G.add_edge(0,16,weight=710)
-G.add_edge(0,15,weight=530)
+G.add_edge(14,16,weight=710)
+G.add_edge(14,15,weight=530)
 
 # 15: HR Server*
 
@@ -102,7 +103,7 @@ G.add_edge(16,18,weight=830)
 
 # 18: R&D Server*
 
-# Draw and display graph
+# Draw and display graph (circular format to avoid random graph generation)
 nx.draw_circular(G, labels=l, node_color=colours, node_size = 600)
 plt.show()
 
