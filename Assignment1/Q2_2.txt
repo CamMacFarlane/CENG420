@@ -1,0 +1,29 @@
+f(n) = g(n) + h(n)
+
+g(n) = cost to reach current node "n"
+h(n) = cost to reach goal node
+
+f_(n) = g(n) + h_(n), where f_(n) and h_(n) are vectors
+
+f_i(n) = g(n) + h_i(n), h_i(n) = the cost to reach the i-th goal node
+
+
+Algorithm:
+==========
+
+for NODE N in GRAPH G:
+	
+	# get cost already spent to reach NODE N
+	g = sum(path_to_N.edge_weights)
+
+	# get cost to reach all available goals from NODE N
+	# GOALS is a list of all goal nodes reachable from NODE N, where GOAL[i] is the i-th goal
+	for i in GOALS:	
+		h[i] = sum(path_to_GOAL[i].weights)
+
+	# Add both values
+	f = g + h # f and h are vectors
+
+	# f is now a vector with a heuristic value (total cost to reach GOALS from NODE N)
+	# choose path associated with lowest f value (lowest total cost to reach a goal from current position)
+
