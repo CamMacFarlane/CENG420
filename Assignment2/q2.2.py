@@ -39,5 +39,6 @@ def greedy(items, weights, profits, capacity):
 
     print("Output from Greedy: ")
     print(knapsack, "Total weight: ", totalWeight, "/", capacity, "Total Profit", totalProfit )
+    return knapsack
 
-greedy(items_l,weights_l,profits_l,capacity)
+print(greedy(items_l,weights_l,profits_l,capacity))
