@@ -1,0 +1,25 @@
+Movie: Rating (G - R), Genre, Writer, Publish Date, Director, Stars, length
+Applications: Reccomendation Systems, 
+
+
+Soccer Team: League, Rank, Nationality, Name,  Players, Owner, Coach
+Applications: Betting Algorithm, Leaderboard Creator 
+
+House: Location, Number of bedrooms, Number of bathrooms, Market value, area (square footage), Floors, Heating Type
+Applications: Tax evaluation, Home search algorithm
+
+
+Pizza: Crust Type, Cheese Type, Protien Type, Sauce Type, Size, Vegitarian, Gluten Free
+Applications: Ordering System, Reccomendation System, Accounting?
+
+Distance Function For House:
+
+Just use euclidian for every item and weight them?
+
+#problem here is that it will return the same result when comparing a house with 40 rooms to a house with 0 rooms as it will to a house with 1 room and a house with 0 rooms. 
+#But we need to to be max 1?
+
+abs(house1.numBedrooms - house2.numBedrooms)/max(house1.numBedrooms, house2.numBedrooms) 
+
+
+   
