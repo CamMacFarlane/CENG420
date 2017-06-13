@@ -3,7 +3,9 @@ import string
 import copy
 from math import floor
 import time
+
 stringOfLetters = string.ascii_uppercase
+#Problem variables
 
 num_items = 20
 
@@ -19,12 +21,16 @@ items = [stringOfLetters[i] for i in range(num_items)]
 weights = [random.randint(weight_min,weight_max) for i in range(num_items)]
 profits = [random.randint(profit_min,profit_max) for i in range(num_items)]
 
-
+#Print problem set
 print("#######################################")
 print("Num Items:", num_items, "Weights [",weight_min, "," , weight_max, "]")
 print("Profits: [", profit_min, ",", profit_max, "]", "Capacity: ", capacity,"\n")
 for i in range(num_items):
     print("Item ", items[i] , "weight ", weights[i], "profit", profits[i])
+
+################################################
+#Begin Greedy
+################################################
 
 def greedy(items, weights, profits, capacity):
     greedyStartTime_s = time.time()
@@ -62,10 +68,13 @@ profits_copy = copy.copy(profits)
 greedyoutput = greedy(items_copy,weights_copy,profits_copy,capacity)
 greedyTime = greedyoutput[2]
 greedyProfit = greedyoutput[1] 
+
 print("run time:", greedyTime, "s")
 
 
-
+##############################################################
+#Begin Genetic Algorithm
+##############################################################
 '''
 Genetic:
 '''
@@ -302,11 +311,6 @@ while generation_counter < termination:
 population = sorted(population, key=lambda k: k['profit'])
 
 geneticTotalTime = time.time() - geneticStartTime_s 
-# for i in population:
-    # print(i)
-
-# print(items)
-
 
 knapsack = list()
 winningChomosome = population[len(population)-1]['chromosome']
@@ -317,11 +321,25 @@ for i in range(len(winningChomosome)):
     if(winningChomosome[i] == '1'):
         knapsack.append(items[i])
 
+##########################################################
+#End of Genetic 
+##########################################################
+
+# for i in population:
+    # print(i)
+
+# print(items)
+
+#Genetic Output
+
 print("\nOutput from Genetic")
 print("Termination = ", termination)
 print(winningChomosome)
 print(knapsack, "Total weight: ", winningWeight, "/", capacity, "Total Profit", geneticProfit )
 print("run time: ", geneticTotalTime)
+
+#Comparison between greedy and genetic
+
 if(greedyProfit > geneticProfit):
     print("Greedy Wins")
 elif(geneticProfit > greedyProfit):
@@ -333,4 +351,5 @@ if(greedyTime > geneticTotalTime):
     print("greedy took" ,int(greedyTime/geneticTotalTime), "times longer")
 else:
     print("genetic took" ,int(geneticTotalTime/greedyTime), "times longer")
+
 print("#######################################")
