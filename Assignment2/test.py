@@ -47,7 +47,7 @@ def greedy(items, weights, profits, capacity):
         profits.pop(candidate)
         ratio.pop(candidate)
 
-    print("Output from Greedy: ")
+    print("\nOutput from Greedy: ")
     print(knapsack, "Total weight: ", totalWeight, "/", capacity, "Total Profit", greedyProfit )
     totalTime = time.time() - greedyStartTime_s
     return knapsack , greedyProfit, totalTime
@@ -317,7 +317,8 @@ for i in range(len(winningChomosome)):
     if(winningChomosome[i] == '1'):
         knapsack.append(items[i])
 
-print("Output from Genetic")
+print("\nOutput from Genetic")
+print("Termination = ", termination)
 print(winningChomosome)
 print(knapsack, "Total weight: ", winningWeight, "/", capacity, "Total Profit", geneticProfit )
 print("run time: ", geneticTotalTime)
@@ -329,7 +330,7 @@ else:
     print("TIE!")
 
 if(greedyTime > geneticTotalTime):
-    print("greedy took longer")
+    print("greedy took" ,int(greedyTime/geneticTotalTime), "times longer")
 else:
-    print("genetic took longer")
+    print("genetic took" ,int(geneticTotalTime/greedyTime), "times longer")
 print("#######################################")
