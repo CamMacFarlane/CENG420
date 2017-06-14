@@ -1,0 +1,15 @@
+Engineering the N-Queen problem as a genetic algorithm:
+
+Encoding: encoding each chromosome or possible solution as an array of N-integers, indicating the column of the Queen in each row. array[1] corresponds to the first row, etc. 
+All chromosomes will be permutations containing the integers from 1 to N.
+
+Fitness Function: The total number of non-conflicting queens on the board.
+
+Population initialization: The total set of possible solutions will be N! (N-facotrial), with multiple solutions (no formula exists for the number of solutions, N=8 gives 92 possible solutions, N=10 gives 724).
+Number of intitial chromosomes could be varied, but at least 5*N should provide sufficient diversity. Initialize with random permutations of the numbers 1-N. 
+
+Parent Selection: Using multi-point roulette-wheel selection, scaled by fitness, to select two parents. 
+
+Crossover: Using the permutation crossover method, as described in class. 
+
+Termination condition: When a chromosome is found with a fitness of N (N queens on the board, with no conflicts. 
