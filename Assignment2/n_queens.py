@@ -9,6 +9,7 @@ N = 4
 # Termination condition
 #   - # of non-intersecting queens == N
 termination_condition = N
+current_max_fit = -N
 
 #  Each chromosome is a list of (x,y) pairs representing the positions of the queens in the board 
 #   chromosome = [ |x0|, |x1|, ... , |xN| ]
@@ -22,7 +23,6 @@ chromosome = list()
 # Population
 #   - Want:
 #       - Elitism -> preserve the already placed queens on the board
-#
 
 population = list() # a list of individuals
 initial_population_size = N  # Is this a good value?
@@ -38,22 +38,33 @@ def create_chromosome():
     chromosome = [[z, random.randint(0, N-1)] for z in range(0,N)]
     return chromosome
 
+# adapted from example code in course repo
+def roulette_wheel():
+    wheel = 0
+    
+    for individual in population:
+        wheel += individual['fitness']
+    
+    selection_point = random.randint(0, wheel)
+
+    angle = 0
+    
+    for individual in population:
+        angle += individual['fitness']
+        if angle >= selection_point:
+            return individual
+
 def fitness():
 
     for individual in population:
-
         # avoid recalculating fitness for all individuals
         if(individual['fitness'] < 0):
             # get chromosome value
             chromosome = individual['chromosome']
             
             # Since initialization function ensures no two queens have same row
-            #   check only columns and diagonals
+            #   check only if same column or same diagonal
 
-            # Cases to check for
-            #   - Same column
-            #   - Same diagonal
-            
             # maximum fitness is a perfect score of N non-intersecting queens
             individual['fitness'] = N
 
@@ -143,7 +154,6 @@ def mutation(individual):
 
     return individual
 
-
 # testing
 
 def display_individual(individual):
@@ -174,3 +184,44 @@ fitness()
 for k in population:
     display_individual(k)
     print ""
+
+# Genetic algorithm to solve N-Queens problem
+
+initialize_population()
+fitness()
+
+while current_max_fit < termination_condition:
+
+    new_offsprings = floor(len(population) * crossover_rate / 2)
+
+    new_generation = list()
+
+    while new_offsprings > 0:
+        parent_one = roulette_wheel()
+        parent_two = roulette_wheel()
+
+        offspring_one, offspring_two = crossover(parent_one, parent_two)
+
+        offspring_one = mutation(offspring_one)
+        offspring_two = mutation(offspring_two)
+
+        new_generation.append(offspring_one)
+        new_generation.append(offspring_two)
+
+        new_offsprings -= 1
+
+    population = sorted(population, key=lambda k: k['fitness'])
+    del population[0:len(new_generation)]
+
+    population = new_generation + population
+    
+    fitness()
+
+    max_fit_individual = max(population, key=lambda k: k['fitness'])
+    current_max_fit = max_fit_individual['fitness']
+
+
+for k in population:
+    print k
+
+display_individual(max_fit_individual)
