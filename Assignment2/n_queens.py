@@ -4,7 +4,7 @@ import random
 from math import floor
 
 # Define the size of the board
-N = 4
+N = 6
 
 # Termination condition
 #   - # of non-intersecting queens == N
@@ -18,7 +18,6 @@ chromosome = list()
 
 # Fitness Function:
 #   - number of non-intersecting queens on board
-#       - refine with number of available spaces to place next queen?
 
 # Population
 #   - Want:
@@ -28,9 +27,22 @@ population = list() # a list of individuals
 initial_population_size = N  # Is this a good value?
 
 # Genetic algorithm parameters
-mutation_resistance = 0.9
+mutation_resistance = 0.9   # unused
 mutation_rate = 0.7
 crossover_rate = 0.5
+
+def display_individual(individual):
+    for x in range(0,N):
+
+        queen_x = individual['chromosome'][x][0]
+        queen_y = individual['chromosome'][x][1]
+
+        for y in range(0,N):
+            if(queen_x == x and queen_y == y):
+                print "Q",
+            else:
+                print "_",
+        print ""
 
 def create_chromosome():
     # want: list of [x,y] such that x is in [0, N-1] and y is in [0, N-1]
@@ -43,16 +55,24 @@ def roulette_wheel():
     wheel = 0
     
     for individual in population:
-        wheel += individual['fitness']
+        a = individual['fitness']
+        if(a < 0):
+            continue # ignore individuals with negative fitness values
+        else:
+            wheel += individual['fitness']
     
     selection_point = random.randint(0, wheel)
 
     angle = 0
     
     for individual in population:
-        angle += individual['fitness']
-        if angle >= selection_point:
-            return individual
+        a = individual['fitness']
+        if(a < 0):
+            continue
+        else:
+            angle += individual['fitness']
+            if angle >= selection_point:
+                return individual
 
 def fitness():
 
@@ -138,57 +158,35 @@ def mutation(individual):
     # apply a random mutation to the chromosome
     #   NOTE: must still preserve the one queen per row condition
     #   THEREFORE: mutation simply changes the column entry for a queen in a random row
+    #   Should mutation resistance depend on board size? 
+    #       N = 4 --> 2 mutations is a 50% change 
+    #       N = 8 --> 2 mutations is a 25% change
 
-    # get chromosome to be modified
-    chromosome = individual['chromosome']
-    
-    # Randomly select row (gene) to mutate
-    row = random.randint(0, N-1)
+    if(random.uniform(0,1) < mutation_rate): 
+        # get chromosome to be modified
+        chromosome = individual['chromosome']
+        
+        # Randomly select row (gene) to mutate
+        row = random.randint(0, N-1)
 
-    # Apply mutation
-    chromosome[row][1] = random.randint(0, N-1)
-    
-    # Save result back to individual, ensure new fitness value is calculated
-    individual['chromosome'] = chromosome
-    individual['fitness'] = -1
+        # Apply mutation
+        chromosome[row][1] = random.randint(0, N-1)
+        
+        # Save result back to individual, ensure new fitness value is calculated
+        individual['chromosome'] = chromosome
+        individual['fitness'] = -1
 
     return individual
-
-# testing
-
-def display_individual(individual):
-    for x in range(0,N):
-
-        queen_x = individual['chromosome'][x][0]
-        queen_y = individual['chromosome'][x][1]
-
-        for y in range(0,N):
-            if(queen_x == x and queen_y == y):
-                print "Q",
-            else:
-                print "_",
-        print ""
-
-initialize_population()
-
-for k in population:
-    print k
-
-fitness()
-
-for k in population:
-    print k
-
-fitness()
-
-for k in population:
-    display_individual(k)
-    print ""
 
 # Genetic algorithm to solve N-Queens problem
 
 initialize_population()
 fitness()
+
+# check to see if solution was generated during population initialization
+# (can happen with small N values, e.g. N = 4)
+max_fit_individual = max(population, key=lambda k: k['fitness'])
+current_max_fit = max_fit_individual['fitness']
 
 while current_max_fit < termination_condition:
 
@@ -220,8 +218,10 @@ while current_max_fit < termination_condition:
     max_fit_individual = max(population, key=lambda k: k['fitness'])
     current_max_fit = max_fit_individual['fitness']
 
-
+# display results
 for k in population:
     print k
 
+print ""
+print max_fit_individual
 display_individual(max_fit_individual)
