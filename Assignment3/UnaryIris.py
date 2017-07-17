@@ -5,19 +5,18 @@ import math
 
 MAX_RADIUS = 2.0
 REQ_MATCHES = 10
-DEBUG = True
+DEBUG = False
 OPTIMIZE = False
 
 random.seed()
 
 iris = datasets.load_iris()
 
+# Parse Iris Data into three distinct arrays
+
 Setosa = iris.data[0:49, :]
 Versicolor = iris.data[50:99, :]
 Virginica = iris.data[100:149, :]
-
-#SetosaTraining = numpy.array([[1.0,2.0,3.0,4.0]])
-#TestData = numpy.array([[1.0, 1.0, 1.0, 1.0]])
 
 def distance(a, b):  # function for computing euclidean distance (higher = less similar) between two arrays
 	sum = 0
@@ -40,7 +39,7 @@ def classify(Specimen, Reference, radius=MAX_RADIUS, matches=REQ_MATCHES):		# fi
 for i in range(0, 15):
 	index = random.randrange(49-i)
 	if i == 0: 
-		SetosaTraining = numpy.array([Setosa[index, :]])
+		SetosaTraining = numpy.array([Setosa[index, :]])  # first entry opens array
 	else:
 		SetosaTraining = numpy.concatenate((SetosaTraining, [Setosa[index, :]]))
 
