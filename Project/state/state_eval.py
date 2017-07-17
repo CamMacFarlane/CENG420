@@ -1,6 +1,8 @@
 # SETUP:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 # Global variables for tuning/adjustment:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -25,20 +27,27 @@ def threat(x, y, mass):
 # ///////////////////////////////////////////////////////////////////////////////////////////
 # example game state array
 #   "view" is a formatted array of all visible enemies and food items within a radius
-view = {"players": [{"x": 100, "y": 80, "mass": 25}, {"x": -80, "y": 100, "mass": 50}], "food": []}
+view = {"players": [{"x": 100, "y": 80, "mass": 25}, 
+                    {"x": -80, "y": 100, "mass": 50}], 
+        "food": [   {"x": 25, "y": 24},
+                    {"x": -35, "y": -70},
+                    {"x": 50, "y": 65},
+                    {"x": -75, "y": -80}] }
+
+# random game state generation
+
+
 
 
 
 # MAIN:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
-# extract enemy information from game state array
+# information from game state array
 # ///////////////////////////////////////////////////////////////////////////////////////////
-# get number of visible enemies
-vis_enemies = len(view["players"])
 
 # extract enemy data
-enemies = [view["players"][k] for k in range(0, vis_enemies)] 
+enemies = [view["players"][k] for k in range(0, len(view["players"]))] 
 
 # generate new information for each enemy
 for k in enemies:
@@ -52,7 +61,16 @@ for k in enemies:
     # add features to each enemy after calculation
     k.update(f)
 
-# group enemies by sector
+# extract food data
+food = [view["food"][k] for k in range(0, len(view["food"]))]
+
+# calculate angle of food for sector placement
+for k in food:
+    f = dict()
+    f["angle"] = np.arctan2(k["y"], k["x"])
+    k.update(f)
+
+# group enemies/food by sector
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
 # create list to hold information for each sector
@@ -85,11 +103,23 @@ for k in enemies:
             sector["threats"].append(k["threat"])
 
 
-# define discrete states for Q-learning based on sector threats
+# define food in each sector
+for k in food:
+    angle = k["angle"]
+
+    # check which sector the enemy is in
+    for sector in sectors:
+        # if the enemy angle is within the edges of a sector
+        if (angle > sector["edge1"] and angle < sector["edge2"]):
+            # add that enemy's threat score to the list of threats in that sector
+            sector["food"].append(angle)
+
+# define discrete states for Q-learning based on sector threats/food
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
 states = [list() for k in range(0, N)]
 
+# sector threat calc
 # sum all visible threat values
 total_threat = 0;
 
@@ -109,34 +139,72 @@ for k in range(0, N):
     # add discrete threat value to state matrix
     states[k].append(rel_threat)
 
+# sector food calc
+# all food has the same value
+total_food = len(food)
+
+for k in range(0, N):
+    sector_food = float(len(sectors[k]["food"]))
+    
+    rel_food = np.floor((sector_food/total_food)*MAX_FOOD_LEVEL)
+
+    states[k].append(rel_food)
+
+
 # TESTING:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 def DEBUG():
+    print "Enemies:"
     for k in enemies:
         print k
+    print ""
 
+    print "Food:"
+    for k in food:
+        print k    
+    print ""
+
+    print "Sector Edges:"
     print sector_edges
+    print ""
 
+    print "Sector contents:"
     for k in range(0, N):
         print k, sectors[k]
+    print ""
 
+    print "Total Threat:"
     print total_threat
+    print ""
 
+    print "Sector Threats:"
     for sector in sectors:
         print sector["threats"]
+    print ""
 
+    print "States:"
     for k in states:
         print k
+
+# plotting food and enemies for verification
+
+# pull data from worldview
+
+food_angles = []
+food_radii = []
+
+enemy_angles = []
+enemy_radii = []
+
+ax = plt.subplot(111, projection='polar')
+ax.set_ylim(0, 120)
+
+plt.show()
 
 DEBUG()
 
 # NOTES:
 # ///////////////////////////////////////////////////////////////////////////////////////////
-#   Adjustable parameters
-#   sector_count        = N     # Number of sectors to divide worldview into
-#
-#
-
 #   # Use ceiling() for conservative threat calculation (round towards higher threat)
 #   sector_threat = ceiling((sum(threats_in_sector)/sum(visible_threats))*MAX_THREAT_STATES)
 #   
