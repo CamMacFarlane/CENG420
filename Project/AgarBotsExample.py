@@ -1,12 +1,15 @@
 import AgarBots
+from state import state_function
 import random
 import time
 
 BOTNAME = "SamBot"
-DURATION = 3
-NUM_BOTS = 10
+DURATION = 10
+NUM_BOTS = 2
 
 ID = str(random.randrange(10000))
+
+AgarBots.createStaticObstacles(5)
 
 for i in range(0, NUM_BOTS):
 	playerID = ID + str(i)

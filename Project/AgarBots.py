@@ -9,6 +9,7 @@ makePlayerURL = "https://agar-willy-branch.herokuapp.com/createPlayer"
 movePlayerURL = "https://agar-willy-branch.herokuapp.com/move"
 removePlayerURL = "https://agar-willy-branch.herokuapp.com/removePlayer"
 getNearbyObjectsURL = "https://agar-willy-branch.herokuapp.com/getNearbyObjects"
+createStaticObstaclesURL = "https://agar-willy-branch.herokuapp.com/createStaticObstacles"
 
 # makePlayer: creates a player with the specified name, ID and mass.
 
@@ -28,6 +29,10 @@ def moveplayer(identifier, x, y):
 
 def removeplayer(identifier):
 	r = requests.post(removePlayerURL, headers={"content-type": "application/json"}, json={"id": identifier})
+	print(r.status_code, r.reason)
+
+def createStaticObstacles(number):
+	r = requests.post(createStaticObstaclesURL, headers={"content-type": "application/json"}, json={"numberOfBots": number})
 	print(r.status_code, r.reason)
 
 # getNearbyObjects: Calls the GetNearbyObjects API and returns a formatted list which functions with the Threat-measuring function
