@@ -23,16 +23,19 @@ def threat(x, y, mass):
     # function can be changed/improved later if needed
     return mass/np.sqrt(x**2 + y**2)
 
+def distance(x, y):
+    pass
+
 # Test Data:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 # example game state array
 #   "view" is a formatted array of all visible enemies and food items within a radius
-view = {"players": [{"x": 100, "y": 80, "mass": 25}, 
-                    {"x": -80, "y": 100, "mass": 50}], 
-        "food": [   {"x": 25, "y": 24},
-                    {"x": -35, "y": -70},
-                    {"x": 50, "y": 65},
-                    {"x": -75, "y": -80}] }
+#view = {"players": [{"x": 100, "y": 80, "mass": 25}, 
+#                    {"x": -80, "y": 100, "mass": 50}], 
+#        "food": [   {"x": 25, "y": 24},
+#                    {"x": -35, "y": -70},
+#                    {"x": 50, "y": 65},
+#                    {"x": -75, "y": -80}] }
 
 # random game state generation
 
