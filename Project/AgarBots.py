@@ -7,12 +7,14 @@ import requests
 import math
 DEBUG = True
 
-makePlayerURL = "https://agar-willy-branch.herokuapp.com/createPlayer"
-movePlayerURL = "https://agar-willy-branch.herokuapp.com/move"
-removePlayerURL = "https://agar-willy-branch.herokuapp.com/removePlayer"
-getNearbyObjectsURL = "https://agar-willy-branch.herokuapp.com/getNearbyObjects"
-createStaticObstaclesURL = "https://agar-willy-branch.herokuapp.com/createStaticObstacles"
-getPlayerInfoURL = "https://agar-willy-branch.herokuapp.com/getPlayerInfo"
+serverURL = "http://localhost:3000"
+
+makePlayerURL = serverURL + "/createPlayer"
+movePlayerURL = serverURL + "/move"
+removePlayerURL = serverURL + "/removePlayer"
+getNearbyObjectsURL = serverURL + "/getNearbyObjects"
+createStaticObstaclesURL = serverURL + "/createStaticObstacles"
+getPlayerInfoURL = serverURL + "/getPlayerInfo"
 
 # makePlayer: creates a player with the specified name, ID and mass.
 
@@ -69,4 +71,13 @@ def isAlive(identifier):
 		return True
 	except ValueError:
 		return False
+
+def getPlayerInfo(identifier):
+	r = requests.post(serverURL+"/getPlayerInfo", headers={"content-type": "application/json"}, json={"id": identifier})
+	if DEBUG: print(r.status_code, r.reason)
+	data = r.json()
+	return data
+
+def frame_step(currentState, action):
+
 
