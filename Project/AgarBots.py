@@ -71,9 +71,17 @@ def isAlive(identifier):
 	if DEBUG: print(r.status_code, r.reason)
 	try:
 		data = r.json()
+		if DEBUG: print(data)
 		return True
 	except ValueError:
 		return False
+
+def getView(identifier):
+	if DEBUG: print(getNearbyObjectsURL)
+	r = requests.post(getNearbyObjectsURL, headers={"content-type": "application/json"}, json={"id": identifier})
+	if DEBUG: print(r.status_code, r.reason)
+	data = r.json()
+	return data
 
 def getPlayerInfo(identifier):
 	r = requests.post(serverURL+"/getPlayerInfo", headers={"content-type": "application/json"}, json={"id": identifier})
