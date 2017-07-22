@@ -7,12 +7,15 @@ import requests
 import math
 DEBUG = True
 
-makePlayerURL = "https://agar-willy-branch.herokuapp.com/createPlayer"
-movePlayerURL = "https://agar-willy-branch.herokuapp.com/move"
-removePlayerURL = "https://agar-willy-branch.herokuapp.com/removePlayer"
-getNearbyObjectsURL = "https://agar-willy-branch.herokuapp.com/getNearbyObjects"
-createStaticObstaclesURL = "https://agar-willy-branch.herokuapp.com/createStaticObstacles"
-getPlayerInfoURL = "https://agar-willy-branch.herokuapp.com/getPlayerInfo"
+url = "http://localhost:3000/"
+
+
+makePlayerURL = url + "createPlayer"
+movePlayerURL = url + "move"
+removePlayerURL = url + "removePlayer"
+getNearbyObjectsURL = url + "getNearbyObjects"
+createStaticObstaclesURL = url + "createStaticObstacles"
+getPlayerInfoURL = url + "getPlayerInfo"
 
 # makePlayer: creates a player with the specified name, ID and mass.
 
@@ -55,11 +58,13 @@ def getNearbyObjects(identifier):
 
 # move: instructs specified player to move in direction specified by sector # and total # of sectors. 
 
-def move(identifier, N, maxN):
+def move(identifier, N, maxN=8):
 	direction = 0 + (N * 2 * math.pi / maxN) + (math.pi / maxN)
 	x = 200 * math.cos(direction)
 	y = 200 * math.sin(direction)
 	moveplayer(identifier, x, y)
+
+# isAlive: returns True if the player specified is currently alive. To be used in while(isAlive) context
 
 def isAlive(identifier):
 	r = requests.post(getPlayerInfoURL, headers={"content-type": "application/json"}, json={"id": identifier})

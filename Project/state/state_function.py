@@ -148,4 +148,4 @@ def test_get_states():
 
     # print test results
     for k in test:
-        print k
+        print(k)
