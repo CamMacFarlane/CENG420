@@ -4,7 +4,7 @@ import random
 import time
 
 BOTNAME = "CamBot"
-DURATION = 100
+DURATION = 100000
 NUM_BOTS = 1
 NUM_OBSTACLES = 5
 
@@ -44,7 +44,7 @@ for j in range(1, DURATION):
         print(sectors)
         print("Chose:", sector, sectors[sector - 1])
         AgarBots.move(playerID,len(sectors) + 1,sector)
-        time.sleep(1)
+        time.sleep(random.random())
 
 print(AgarBots.getNearbyObjects(ID + "0"))
 
