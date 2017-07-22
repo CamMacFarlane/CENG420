@@ -30,7 +30,8 @@ def get_states(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL):
         
         # determine new feature values
         f["angle"] = np.arctan2(k["y"], k["x"])
-        f["threat"] = threat(k["x"], k["y"], k["mass"])     #could simply pass ref to dictionary?
+        
+        f["threat"] = threat(k["x"], k["y"], k['cells'][0]['mass'])     #could simply pass ref to dictionary?
         
         # add features to each enemy after calculation
         k.update(f)
