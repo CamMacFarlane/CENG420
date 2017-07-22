@@ -31,16 +31,18 @@ def get_states(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
     
     for k in enemies:
         # new features to be calculated
-        f = dict() #{"angle":, "threat":}
-        
-        # determine new feature values
-        f["angle"] = np.arctan2(k["y"], k["x"])
-        # print(k)
-        f["threat"] = threat(k["x"], k["y"], k['cells'][0]['mass'])     #could simply pass ref to dictionary?
-        # print("threat k", threat)
-        # print("enemies", len(enemies))
-        # add features to each enemy after calculation
-        k.update(f)
+        if(len(k['cells']) > 0):
+            f = dict() #{"angle":, "threat":}
+            
+            # determine new feature values
+            f["angle"] = np.arctan2(k["y"], k["x"])
+            # print(k)
+            print(len(k['cells']))
+            f["threat"] = threat(k["x"], k["y"], k['cells'][0]['mass'])     #could simply pass ref to dictionary?
+            # print("threat k", threat)
+            # print("enemies", len(enemies))
+            # add features to each enemy after calculation
+            k.update(f)
 
     # extract food data
     food = [view["food"][k] for k in range(0, len(view["food"]))]
