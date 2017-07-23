@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
 # Number of sectors
-N = 8
+N = 16
 
 # Discretization level specifiers
 MAX_THREAT_LEVEL   = 10    # Number of discrete threat levels to consider
@@ -30,12 +30,12 @@ def distance(x, y):
 # ///////////////////////////////////////////////////////////////////////////////////////////
 # example game state array
 #   "view" is a formatted array of all visible enemies and food items within a radius
-#view = {"players": [{"x": 100, "y": 80, "mass": 25}, 
-#                    {"x": -80, "y": 100, "mass": 50}], 
-#        "food": [   {"x": 25, "y": 24},
-#                    {"x": -35, "y": -70},
-#                    {"x": 50, "y": 65},
-#                    {"x": -75, "y": -80}] }
+view = {"players": [{"x": 100, "y": 80, "mass": 25}, 
+                   {"x": -80, "y": 100, "mass": 50}], 
+       "food": [   {"x": 25, "y": 24},
+                   {"x": -35, "y": -70},
+                   {"x": 50, "y": 65},
+                   {"x": -75, "y": -80}] }
 
 # random game state generation
 
@@ -157,37 +157,37 @@ for k in range(0, N):
 # TESTING:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 def DEBUG():
-    print "Enemies:"
+    print( "Enemies:")
     for k in enemies:
-        print k
-    print ""
+        print (k)
+    print( "")
 
-    print "Food:"
+    print( "Food:")
     for k in food:
-        print k    
-    print ""
+        print(k)    
+    print( "")
 
-    print "Sector Edges:"
-    print sector_edges
-    print ""
+    print( "Sector Edges:")
+    print (sector_edges)
+    print( "")
 
-    print "Sector contents:"
+    print( "Sector contents:")
     for k in range(0, N):
-        print k, sectors[k]
-    print ""
+        print( k, sectors[k])
+    print( "")
 
-    print "Total Threat:"
-    print total_threat
-    print ""
+    print( "Total Threat:")
+    print (total_threat)
+    print( "")
 
-    print "Sector Threats:"
+    print( "Sector Threats:")
     for sector in sectors:
-        print sector["threats"]
-    print ""
+        print (sector["threats"])
+    print( "")
 
-    print "States:"
+    print( "States:")
     for k in states:
-        print k
+        print (k)
 
 # plotting food and enemies for verification
 
@@ -204,7 +204,7 @@ ax.set_ylim(0, 120)
 
 plt.show()
 
-DEBUG()
+# DEBUG()
 
 # NOTES:
 # ///////////////////////////////////////////////////////////////////////////////////////////
