@@ -59,7 +59,7 @@ def getNearbyObjects(identifier):
 # move: instructs specified player to move in direction specified by sector # and total # of sectors. 
 
 def move(identifier, N, maxN=8):
-	direction = 0 + (N * 2 * math.pi / maxN) + (math.pi / maxN)
+	direction = 0 + ((maxN -1)/maxN)*(-math.pi) + N*(2*math.pi/maxN)
 	x = 200 * math.cos(direction)
 	y = 200 * math.sin(direction)
 	moveplayer(identifier, x, y)
