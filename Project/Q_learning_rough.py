@@ -71,6 +71,27 @@ def removePlayer(identifier):
   }
   requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
 
+def getNearbyObjects(identifier):
+	r = requests.post(getNearbyObjectsURL, headers=headers, json={"id": identifier})
+	if DEBUG: print(r.status_code, r.reason)
+	data = r.json()
+	nearby = {'players': [], 'food': []}
+	for entry in data['players']:
+		player = {"x" : 0, "y" : 0, "mass" : 0}
+		player['x'] = entry['x']
+		player['y'] = entry['y']
+		player['mass'] = entry['cells'][0]['mass']
+		nearby['players'].append(player)
+	return nearby
+
+# move: instructs specified player to move in direction specified by sector # and total # of sectors. 
+
+def move(identifier, N, maxN=8):
+	direction = 0 + ((maxN -1)/maxN)*(-math.pi) + N*(2*math.pi/maxN)
+	x = 200 * math.cos(direction)
+	y = 200 * math.sin(direction)
+	moveplayer(identifier, x, y)
+
 # Q-LEARNING FUNCTIONS:
 
 def threat(x, y, mass):
