@@ -184,6 +184,7 @@ def getState(playerID):
         f = dict()
         f["angle"] = np.arctan2(k["y"] - player_y, k["x"] - player_x)
         f["distance"] = distance_inverse(abs(k["x"] -player_x), abs(k["y"] - player_y))
+        f["value"] = MAX_FOOD_LEVEL*np.floor(k["mass"]*f["distance"])
         k.update(f)
 
     # group enemies/food by sector
@@ -223,7 +224,7 @@ def getState(playerID):
             # if the food angle is within the edges of a sector
             if (angle > sector["edge1"] and angle < sector["edge2"]):
                 # add that food score to the list of food in that sector
-                sector["food"].append(k["distance"])
+                sector["food"].append(k["value"])
 
     sectorEvaluations = [list() for k in range(0, N)]
 
@@ -255,7 +256,7 @@ def getState(playerID):
     # sector food calc
     total_food = 0 
     for k in food:
-        total_food += k["distance"]
+        total_food += k["value"]
 
     for k in range(0, N):
         rel_food = 0
