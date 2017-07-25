@@ -5,9 +5,9 @@ makes a number of Bots, moves them around randomly for a while, gets the state o
 
 import requests
 import math
-DEBUG = True
+DEBUG = False
 
-url = "http://localhost:3000/"
+url = "https://agar-willy-branch.herokuapp.com/"
 
 
 makePlayerURL = url + "createPlayer"

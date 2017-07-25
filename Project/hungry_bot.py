@@ -7,13 +7,13 @@ headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
 def createPlayer():
   removePlayerData = {
-    "name": "kenneth_bot",
-    "id": "deus_ex_machina_bot"
+    "name": "hungry_bot",
+    "id": "hungry_bot"
   }
   requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
   createPlayerData = {
-    "name": "kenneth_bot",
-    "id": "deus_ex_machina_bot"
+    "name": "hungry_bot",
+    "id": "hungry_bot"
   }
   res = requests.post(domain + '/createPlayer', data=json.dumps(createPlayerData), headers=headers)
   print(res.text)
@@ -21,8 +21,8 @@ def createPlayer():
 def movePlayer(x, y):
   url = domain + '/move'
   moveData = {
-    "id": "deus_ex_machina_bot",
-    "x": x, 
+    "id": "hungry_bot",
+    "x": x,
     "y": y
   }
   requests.post(url, data=json.dumps(moveData), headers=headers)
@@ -30,7 +30,7 @@ def movePlayer(x, y):
 def getBoardState():
   url = domain + '/getNearbyObjects'
   data = {
-    "id": "deus_ex_machina_bot"
+    "id": "hungry_bot"
   }
   res = requests.post(url, data=json.dumps(data), headers=headers)
   return json.loads(res.text)
