@@ -5,11 +5,13 @@ import numpy as np
 import requests
 import json
 import time
+import random
+import math
 
 # SERVER CONFIG:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
-domain = "https://agar-willy-branch.herokuapp.com"
+domain = "http://localhost:3000"
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 bot_name = "Q_bot"
 
@@ -30,6 +32,9 @@ REWARD_FOR_EATING = 10
 DEATH_PENALTY = -500    # Value of reward for actions that lead to death
 GAMMA = 0.9             # Q-learning discount rate
 EPSILON = 1             # Q-learning exploration rate
+
+previousLargestMass = 0
+previousTotalMass = 0
 
 # FUNCTIONS:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -71,28 +76,29 @@ def removePlayer(name, identifier):
     "name": name,
     "id": identifier
   }
-  requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
+  res = requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
+  print(res.text)
 
 def getNearbyObjects(identifier):
-	r = requests.post(getNearbyObjectsURL, headers=headers, json={"id": identifier})
-	if DEBUG: print(r.status_code, r.reason)
-	data = r.json()
-	nearby = {'players': [], 'food': []}
-	for entry in data['players']:
-		player = {"x" : 0, "y" : 0, "mass" : 0}
-		player['x'] = entry['x']
-		player['y'] = entry['y']
-		player['mass'] = entry['cells'][0]['mass']
-		nearby['players'].append(player)
-	return nearby
+    r = requests.post(getNearbyObjectsURL, headers=headers, json={"id": identifier})
+    if DEBUG: print(r.status_code, r.reason)
+    data = r.json()
+    nearby = {'players': [], 'food': []}
+    for entry in data['players']:
+        player = {"x" : 0, "y" : 0, "mass" : 0}
+        player['x'] = entry['x']
+        player['y'] = entry['y']
+        player['mass'] = entry['cells'][0]['mass']
+        nearby['players'].append(player)
+    return nearby
 
 # move: instructs specified player to move in direction specified by sector # and total # of sectors. 
 
 def move(identifier, N, maxN=8):
-	direction = 0 + ((maxN -1)/maxN)*(-math.pi) + N*(2*math.pi/maxN)
-	x = 200 * math.cos(direction)
-	y = 200 * math.sin(direction)
-	moveplayer(identifier, x, y)
+    direction = 0 + ((maxN -1)/maxN)*(-math.pi) + N*(2*math.pi/maxN)
+    x = 200 * math.cos(direction)
+    y = 200 * math.sin(direction)
+    movePlayer(identifier, x, y)
 
 def createStaticBots(number):
     for i in range(0, number):
@@ -113,7 +119,28 @@ def threat(x, y, mass):
 def distance_inverse(x, y):
     return 1.0/np.sqrt(x**2 + y**2)
 
-def getState(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
+#Get the mass of a player, extracts the largest mass cell as well as the total mass
+def getMassOfPlayer(playerJSON):
+    totalMass = 0
+    largestMass = 0
+    # print(playerJSON)
+    cells = [playerJSON["cells"][k] for k in range(len(playerJSON["cells"]))]
+    # print(cells)
+    for k in cells:
+        mass = k["mass"]
+        if mass > largestMass:
+            largestMass = mass
+        totalMass += mass
+
+    return int(largestMass), int(totalMass)
+
+def getState(playerID):
+    global N, MAX_FOOD_LEVEL, MAX_THREAT_LEVEL
+    global previousLargestMass, previousTotalMass
+    currentLargestMass = 0
+    view = getBoardState(playerID)
+
+
     # extract enemy data
     enemies = [view["players"][k] for k in range(0, len(view["players"]))] 
     
@@ -123,8 +150,9 @@ def getState(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
         if(k["id"] == playerID):
             player_y = k["y"]
             player_x = k["x"]
+            currentLargestMass, currentTotalMass = getMassOfPlayer(k)
             enemies.remove(k)
-    
+        
     for k in enemies:
         # new features to be calculated
         if(len(k['cells']) > 0):
@@ -184,7 +212,7 @@ def getState(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
                 # add that food score to the list of food in that sector
                 sector["food"].append(k["distance"])
 
-    states = [list() for k in range(0, N)]
+    sectorEvaluations = [list() for k in range(0, N)]
 
     # sector threat calc
     # sum all visible threat values
@@ -209,7 +237,7 @@ def getState(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
         else:
             rel_threat = 0
         # add discrete threat value to state list
-        states[k].append(rel_threat*10)
+        sectorEvaluations[k].append(rel_threat)
 
     # sector food calc
     total_food = 0 
@@ -222,13 +250,17 @@ def getState(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
             sector_food = sum(sectors[k]["food"])
             rel_food = (sector_food/total_food)
             rel_food = rel_food * MAX_FOOD_LEVEL
-            rel_food = np.ceil(rel_food*10)
-        states[k].append(rel_food)
+            rel_food = np.ceil(rel_food)
+        sectorEvaluations[k].append(rel_food)
 
-    # return states with threat and food scoring calculated
-    return states
+    massDelta = currentTotalMass - previousTotalMass
+    
+    previousLargestMass = currentLargestMass
+    previousTotalMass = currentTotalMass
+    # return sectorEvaluations with threat and food scoring calculated
+    return sectorEvaluations, massDelta
 
-def reward(state):
+def reward(state, massDelta):
     # Calculate the reward for a state
     # state is a list of sectors with [[threat0, food0], [threat1, food1], ... ,[ threaN, foodN]]
     #   for sectors 0 -> N
@@ -236,15 +268,25 @@ def reward(state):
     total_threat = 0
     for k in state:
         total_threat += k[0]
-
+    if(total_threat > 0):
+        print("THREAT")
     total_food = 0
     for k in state:
         total_food += k[1]
 
-    return (N*MAX_THREAT_LEVEL - total_threat + total_food)
+    return (total_food  - total_threat + REWARD_FOR_EATING*massDelta)
 
 # MAIN
 # ///////////////////////////////////////////////////////////////////////////////////////////
+
+def testGetState():
+    playerID = 100
+    createPlayer("testBot" + str(playerID), playerID)
+    state, massDelta = getState(playerID)
+    reward_v = reward(state, massDelta)
+    print(reward_v)
+    removePlayer("testBot" + str(playerID), playerID)
+testGetState()
 
 def main():
     pass
