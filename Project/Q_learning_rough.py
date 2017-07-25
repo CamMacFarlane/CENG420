@@ -134,6 +134,13 @@ def getMassOfPlayer(playerJSON):
 
     return int(largestMass), int(totalMass)
 
+def playerToFood(playerJSON):
+    new_food = dict()
+    new_food['id'] = playerJSON['id']
+    new_food['x'] = playerJSON['x']
+    new_food['y'] = playerJSON['y']
+    new_food['mass'] = getMassOfPlayer(playerJSON)
+
 def getState(playerID):
     global N, MAX_FOOD_LEVEL, MAX_THREAT_LEVEL
     global previousLargestMass, previousTotalMass
@@ -161,7 +168,7 @@ def getState(playerID):
         print("num enemies: ", len(enemies))
         if(largestMassOfEnemyk < 1.15*currentLargestMass):
             print("food not enemy", enemies.index(k))
-            food.append(k)
+            food.append(playerToFood(k))
             listOfFood.append(k)
     
     for i in listOfFood:
