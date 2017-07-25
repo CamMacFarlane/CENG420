@@ -6,18 +6,19 @@ import requests
 import json
 import time
 
-# CONFIG:
+# SERVER CONFIG:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
 domain = "https://agar-willy-branch.herokuapp.com"
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 bot_name = "Q_bot"
 
-# Q-LEARNING STRUCTURES:
+# Q-LEARNING AND STATE INFO:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
 memory = list()
 current_state = list()
+previous_state = list()
 
 # HYPERPARAMETERS:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -25,6 +26,7 @@ current_state = list()
 N = 8                   # Number of sectors/possible actions at each state
 MAX_THREAT_LEVEL = 10   # Specifies range [0, MAX_THREAT_LEVEL] for threat scaling
 MAX_FOOD_LEVEL = 10     # Specifies range [0, MAX_FOOD_LEVEL]   for food scaling
+REWARD_FOR_EATING = 10
 DEATH_PENALTY = -500    # Value of reward for actions that lead to death
 GAMMA = 0.9             # Q-learning discount rate
 EPSILON = 1             # Q-learning exploration rate
@@ -64,9 +66,9 @@ def getBoardState(identifier):
   res = requests.post(url, data=json.dumps(data), headers=headers)
   return json.loads(res.text)
 
-def removePlayer(identifier):
+def removePlayer(name, identifier):
   removePlayerData = {
-    "name": bot_name,
+    "name": name,
     "id": identifier
   }
   requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
@@ -91,6 +93,17 @@ def move(identifier, N, maxN=8):
 	x = 200 * math.cos(direction)
 	y = 200 * math.sin(direction)
 	moveplayer(identifier, x, y)
+
+def createStaticBots(number):
+    for i in range(0, number):
+        name = "staticBot_" + str(i)
+        createPlayer(name, name)
+
+def removeStaticBots(number):
+    for i in range(0, number):
+        name = "staticBot_" + str(i)
+        removePlayer(name, name)
+
 
 # Q-LEARNING FUNCTIONS:
 
