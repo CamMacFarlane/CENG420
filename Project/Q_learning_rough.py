@@ -140,9 +140,10 @@ def getState(playerID):
     currentLargestMass = 0
     view = getBoardState(playerID)
 
-
     # extract enemy data
     enemies = [view["players"][k] for k in range(0, len(view["players"]))] 
+    # extract food data
+    food = [view["food"][k] for k in range(0, len(view["food"]))]
     
     # generate new information for each enemy
     for k in enemies:
@@ -152,7 +153,14 @@ def getState(playerID):
             player_x = k["x"]
             currentLargestMass, currentTotalMass = getMassOfPlayer(k)
             enemies.remove(k)
-        
+
+    #If an enemy is smaller than us consider it food
+    for k in enemies:
+        largestMassOfEnemyk, totalMassOfEnemyk = getMassOfPlayer(k)
+        if(largestMassOfEnemyk < 1.15*currentLargestMass):
+            food.append(k)
+            enemies.remove(k)
+
     for k in enemies:
         # new features to be calculated
         if(len(k['cells']) > 0):
@@ -164,8 +172,6 @@ def getState(playerID):
             # add features to each enemy after calculation
             k.update(f)
 
-    # extract food data
-    food = [view["food"][k] for k in range(0, len(view["food"]))]
     # calculate angle and distance of food for sector placement
     for k in food:
         f = dict()
@@ -269,7 +275,8 @@ def reward(state, massDelta):
     for k in state:
         total_threat += k[0]
     if(total_threat > 0):
-        print("THREAT")
+        print("THREAT!! :", total_threat)
+    
     total_food = 0
     for k in state:
         total_food += k[1]
@@ -287,6 +294,38 @@ def testGetState():
     print(reward_v)
     removePlayer("testBot" + str(playerID), playerID)
 testGetState()
+
+def evaluateState(sectorArray):
+    bestsector = random.randint(1,len(sectorArray) + 1)
+    bestsectorEvaluation = -1000
+    for sector in sectorArray:
+        threat = sector[0]
+        food = sector[1]
+        evaluation = food - threat
+        if evaluation > bestsectorEvaluation:
+            bestsector = sectorArray.index(sector) + 1
+            bestsectorEvaluation = evaluation
+    return bestsector
+
+def testRewardFunciton():
+    playerID = 420
+    createPlayer("testBot" + str(playerID), playerID)
+    createStaticBots(10)
+    for i in range(0, 1000):
+        sectors, massDelta = getState(playerID)
+        if(massDelta > 0):
+            print("ATE FOOD?!")
+        reward_v = reward(sectors, massDelta)
+        print("Reward: ", reward_v)
+        sector = evaluateState(sectors) 
+        print("Sector Evaluations: ", sectors)
+        print("Chose:", sector, sectors[sector - 1])
+        move(playerID, sector, len(sectors) + 1)
+        time.sleep(random.random())
+    removePlayer("testBot" + str(playerID), playerID)
+    removeStaticBots(10)
+
+testRewardFunciton()
 
 def main():
     pass
