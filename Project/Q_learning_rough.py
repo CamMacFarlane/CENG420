@@ -19,6 +19,14 @@ bot_name = "Q_bot"
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
 memory = list()
+# memory = { {  'state': [ [threat0, food0], [threat1, food1], ..., [threatN, foodN] ], 
+#               'action': number in interval [0, N], 
+#               'reward': reward value for new state, 
+#               'new_state': [ [threat0, food0], [threat1, food1], ..., [threatN, foodN] ] },
+#            ...,
+#            {}
+#          }
+
 current_state = list()
 previous_state = list()
 
