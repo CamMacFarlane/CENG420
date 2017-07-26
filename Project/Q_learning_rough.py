@@ -29,12 +29,13 @@ N = 16                   # Number of sectors/possible actions at each state
 MAX_THREAT_LEVEL = 10   # Specifies range [0, MAX_THREAT_LEVEL] for threat scaling
 MAX_FOOD_LEVEL = 10     # Specifies range [0, MAX_FOOD_LEVEL]   for food scaling
 REWARD_FOR_EATING = 10
+REWARD_FOR_DYING = -100
 DEATH_PENALTY = -500    # Value of reward for actions that lead to death
 GAMMA = 0.9             # Q-learning discount rate
 EPSILON = 1             # Q-learning exploration rate
 
-previousLargestMass = 0
-previousTotalMass = 0
+previousLargestMass = 10 
+previousTotalMass = 10
 
 # FUNCTIONS:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -69,7 +70,11 @@ def getBoardState(identifier):
     "id": identifier
   }
   res = requests.post(url, data=json.dumps(data), headers=headers)
-  return json.loads(res.text)
+  try:
+    ret = json.loads(res.text)
+  except ValueError:
+    ret = "PLAYER_DEAD"
+  return ret
 
 def removePlayer(name, identifier):
   removePlayerData = {
@@ -78,6 +83,16 @@ def removePlayer(name, identifier):
   }
   res = requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
   print(res.text)
+
+def isAlive(identifier):
+    r = requests.post(getPlayerInfoURL, headers={"content-type": "application/json"}, json={"id": identifier})
+    if DEBUG: print(r.status_code, r.reason)
+    try:
+        data = r.json()
+        if DEBUG: print(data)
+        return True
+    except ValueError:
+        return False
 
 def getNearbyObjects(identifier):
     r = requests.post(getNearbyObjectsURL, headers=headers, json={"id": identifier})
@@ -146,8 +161,10 @@ def getState(playerID):
     global N, MAX_FOOD_LEVEL, MAX_THREAT_LEVEL
     global previousLargestMass, previousTotalMass
     currentLargestMass = 0
+    
     view = getBoardState(playerID)
-
+    if(view == "PLAYER_DEAD"):
+        return "PLAYER_DEAD", "PLAYER_DEAD"
     # extract enemy data
     enemies = [view["players"][k] for k in range(0, len(view["players"]))] 
     # extract food data
@@ -166,15 +183,15 @@ def getState(playerID):
     #If an enemy is smaller than us consider it food
     for k in enemies:
         largestMassOfEnemyk, totalMassOfEnemyk = getMassOfPlayer(k)
-        print("num enemies: ", len(enemies))
-        if(largestMassOfEnemyk < 1.15*currentLargestMass):
-            print("food not enemy", enemies.index(k))
+        # print("num enemies: ", len(enemies))
+        if(1.15*largestMassOfEnemyk < currentLargestMass):
+            # print("food not enemy", enemies.index(k))
             food.append(playerToFood(k))
             listOfFood.append(k)
     
     for i in listOfFood:
         enemies.remove(i)
-        print("remaining enemies after removeal:", len(enemies))
+        # print("remaining enemies after removeal:", len(enemies))
 
     for k in enemies:
         # new features to be calculated
@@ -193,7 +210,6 @@ def getState(playerID):
         f["angle"] = np.arctan2(k["y"] - player_y, k["x"] - player_x)
         f["distance"] = distance_inverse(abs(k["x"] -player_x), abs(k["y"] - player_y))
         f["value"] = np.floor(MAX_FOOD_LEVEL*10*k["mass"]*f["distance"])
-        # print(f["value"])
         k.update(f)
 
     # group enemies/food by sector
@@ -287,7 +303,9 @@ def reward(state, massDelta):
     # Calculate the reward for a state
     # state is a list of sectors with [[threat0, food0], [threat1, food1], ... ,[ threaN, foodN]]
     #   for sectors 0 -> N
-    
+    if(state == "PLAYER_DEAD"):
+        return  REWARD_FOR_DYING
+
     total_threat = 0
     for k in state:
         total_threat += k[0]
@@ -310,7 +328,8 @@ def testGetState():
     reward_v = reward(state, massDelta)
     print(reward_v)
     removePlayer("testBot" + str(playerID), playerID)
-testGetState()
+
+# testGetState()
 
 def evaluateState(sectorArray):
     bestsector = random.randint(1,len(sectorArray) + 1)
@@ -325,20 +344,28 @@ def evaluateState(sectorArray):
     return bestsector
 
 def testRewardFunciton():
-    playerID = 420
+    playerID = 420 + random.randint(0,10)
     createPlayer("testBot" + str(playerID), playerID)
-    createStaticBots(20)
+    # createStaticBots(20)
     while(True):
     # for i in range(0, 1000):
         sectors, massDelta = getState(playerID)
+        # print(playerID, sectors)
         
         reward_v = reward(sectors, massDelta)
         # print("Reward: ", reward_v)
-        sector = evaluateState(sectors) 
+        if(reward_v == REWARD_FOR_DYING):
+            #respawn
+            createPlayer("testBot" + str(playerID), playerID)
+            previousLargestMass = 10 
+            previousTotalMass = 10
+        else:
+            sector = evaluateState(sectors) 
         # print("Sector Evaluations: ", sectors)
         # print("Chose:", sector, sectors[sector - 1])
-        move(playerID, sector, len(sectors) + 1)
-        time.sleep(random.random())
+            move(playerID, sector, len(sectors) + 1)
+            time.sleep(random.random())
+
     removePlayer("testBot" + str(playerID), playerID)
     removeStaticBots(10)
 
