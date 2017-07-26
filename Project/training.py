@@ -60,7 +60,7 @@ with tf.Session() as sess:
             #Choose an action by greedily (with e chance of random action) from the Q-network
             a,allQ = sess.run([predict,Qout],feed_dict={inputs1:state})
             if np.random.rand(1) < e:
-                a[0] = random.randint(0,7)
+                a[0] = random.randint(0,8)
             #Get new state and reward from environment
             # s1,r,d,_ = env.step(a[0])
             api2.move("kenneth-bot", a[0])
@@ -73,7 +73,7 @@ with tf.Session() as sess:
             maxQ1 = np.max(Q1)
             targetQ = allQ
             targetQ[0,a[0]] = r + y*maxQ1
-            # print(sess.run(W))
+            print(sess.run(W))
             #Train our network using target and predicted Q values
             _,W1 = sess.run([updateModel,W],feed_dict={inputs1:state,nextQ:targetQ})
             rAll += r
