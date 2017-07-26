@@ -139,7 +139,8 @@ def playerToFood(playerJSON):
     new_food['id'] = playerJSON['id']
     new_food['x'] = playerJSON['x']
     new_food['y'] = playerJSON['y']
-    new_food['mass'] = getMassOfPlayer(playerJSON)
+    new_food['mass'], x = getMassOfPlayer(playerJSON)
+    return new_food
 
 def getState(playerID):
     global N, MAX_FOOD_LEVEL, MAX_THREAT_LEVEL
@@ -191,7 +192,8 @@ def getState(playerID):
         f = dict()
         f["angle"] = np.arctan2(k["y"] - player_y, k["x"] - player_x)
         f["distance"] = distance_inverse(abs(k["x"] -player_x), abs(k["y"] - player_y))
-        f["value"] = MAX_FOOD_LEVEL*np.floor(k["mass"]*f["distance"])
+        f["value"] = np.floor(MAX_FOOD_LEVEL*10*k["mass"]*f["distance"])
+        # print(f["value"])
         k.update(f)
 
     # group enemies/food by sector
@@ -300,6 +302,47 @@ def reward(state, massDelta):
 
 # MAIN
 # ///////////////////////////////////////////////////////////////////////////////////////////
+
+def testGetState():
+    playerID = 100
+    createPlayer("testBot" + str(playerID), playerID)
+    state, massDelta = getState(playerID)
+    reward_v = reward(state, massDelta)
+    print(reward_v)
+    removePlayer("testBot" + str(playerID), playerID)
+testGetState()
+
+def evaluateState(sectorArray):
+    bestsector = random.randint(1,len(sectorArray) + 1)
+    bestsectorEvaluation = 0
+    for sector in sectorArray:
+        threat = sector[0]
+        food = sector[1]
+        evaluation = food - threat
+        if evaluation > bestsectorEvaluation:
+            bestsector = sectorArray.index(sector) + 1
+            bestsectorEvaluation = evaluation
+    return bestsector
+
+def testRewardFunciton():
+    playerID = 420
+    createPlayer("testBot" + str(playerID), playerID)
+    createStaticBots(20)
+    while(True):
+    # for i in range(0, 1000):
+        sectors, massDelta = getState(playerID)
+        
+        reward_v = reward(sectors, massDelta)
+        # print("Reward: ", reward_v)
+        sector = evaluateState(sectors) 
+        # print("Sector Evaluations: ", sectors)
+        # print("Chose:", sector, sectors[sector - 1])
+        move(playerID, sector, len(sectors) + 1)
+        time.sleep(random.random())
+    removePlayer("testBot" + str(playerID), playerID)
+    removeStaticBots(10)
+
+testRewardFunciton()
 
 def main():
     pass
