@@ -28,6 +28,14 @@ def decide(state):
 	if (ALG == "Random"):
 		return random.randint(0,(N-1))
 
+# Change config and double-check:
+
+print(API.getConfig())
+API.setConfig(RADIUS, BOT_MASS)
+print(API.getConfig())
+
+# spawn bots
+
 API.createStaticBots(10)
 API.createPlayer(PLAYER_ID, PLAYER_ID)
 
