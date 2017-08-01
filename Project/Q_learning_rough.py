@@ -41,6 +41,23 @@ previousTotalMass = 0
 
 # SERVER FUNCTIONS:
 
+def getConfig():
+    settings = requests.get(domain + '/getConfig', headers=headers)
+    try:
+        ret = settings.text
+    except ValueError:
+        ret = "error"
+    return ret
+
+def setConfig(radius, botMass):
+    params = {
+        "detectableRadius": radius,
+        "staticBotMass": botMass
+    }
+    response = requests.post(domain + '/setConfig', headers=headers)
+    print(response)
+
+
 def createPlayer(name, identifier):
   removePlayerData = {
     "name": name,
@@ -69,7 +86,11 @@ def getBoardState(identifier):
     "id": identifier
   }
   res = requests.post(url, data=json.dumps(data), headers=headers)
-  return json.loads(res.text)
+  try:
+    ret = json.loads(res.text)
+  except ValueError:
+    ret = "PLAYER_DEAD"
+  return ret
 
 def removePlayer(name, identifier):
   removePlayerData = {
@@ -79,8 +100,18 @@ def removePlayer(name, identifier):
   res = requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
   print(res.text)
 
+def isAlive(identifier):
+    r = requests.post(getPlayerInfoURL, headers={"content-type": "application/json"}, json={"id": identifier})
+    if DEBUG: print(r.status_code, r.reason)
+    try:
+        data = r.json()
+        if DEBUG: print(data)
+        return True
+    except ValueError:
+        return False
+
 def getNearbyObjects(identifier):
-    r = requests.post(getNearbyObjectsURL, headers=headers, json={"id": identifier})
+    r = requests.post(domain + '/getNearbyObjects', headers=headers, json={"id": identifier})
     if DEBUG: print(r.status_code, r.reason)
     data = r.json()
     nearby = {'players': [], 'food': []}
@@ -235,7 +266,7 @@ def getState(playerID):
                 # add that food score to the list of food in that sector
                 sector["food"].append(k["value"])
 
-    sectorEvaluations = [list() for k in range(0, N)]
+    sectorEvaluations = []
 
     # sector threat calc
     # sum all visible threat values
@@ -260,7 +291,7 @@ def getState(playerID):
         else:
             rel_threat = 0
         # add discrete threat value to state list
-        sectorEvaluations[k].append(rel_threat)
+        sectorEvaluations.append(-rel_threat)
 
     # sector food calc
     total_food = 0 
@@ -274,31 +305,29 @@ def getState(playerID):
             rel_food = (sector_food/total_food)
             rel_food = rel_food * MAX_FOOD_LEVEL
             rel_food = np.ceil(rel_food)
-        sectorEvaluations[k].append(rel_food)
+        sectorEvaluations[k] += rel_food
 
     massDelta = currentTotalMass - previousTotalMass
     
     previousLargestMass = currentLargestMass
     previousTotalMass = currentTotalMass
     # return sectorEvaluations with threat and food scoring calculated
-    return sectorEvaluations, massDelta
+    return [sectorEvaluations], massDelta
 
 def reward(state, massDelta):
     # Calculate the reward for a state
     # state is a list of sectors with [[threat0, food0], [threat1, food1], ... ,[ threaN, foodN]]
     #   for sectors 0 -> N
-    
+
+    real_state = state[0]
+
     total_threat = 0
-    for k in state:
-        total_threat += k[0]
+    for k in real_state:
+        total_threat += k
     if(total_threat > 0):
         print("THREAT!! :", total_threat)
-    
-    total_food = 0
-    for k in state:
-        total_food += k[1]
 
-    return (total_food  - total_threat + REWARD_FOR_EATING*massDelta)
+    return (total_threat + REWARD_FOR_EATING*massDelta)
 
 # MAIN
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -342,9 +371,9 @@ def testRewardFunciton():
     removePlayer("testBot" + str(playerID), playerID)
     removeStaticBots(10)
 
-testRewardFunciton()
+#testRewardFunciton()
 
-def main():
-    pass
+#def main():
+#    pass
 
-main()
+#main()

@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 # Function Defs:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
+import numpy as np
+
 def threat(x, y, mass):
     # calculate the threat value for an enemy given their mass and location
     #   threat = mass/distance
@@ -22,7 +24,7 @@ def get_states(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
     # ///////////////////////////////////////////////////////////////////////////////////////////
 
     # extract enemy data
-    enemies = [view["players"][k] for k in range(0, len(view["players"]))] 
+    enemies = [view["players"][k] for k in range(0, len(view["players"]))]
     # generate new information for each enemy
     for k in enemies:
         if(k["id"] == playerID):
@@ -97,7 +99,7 @@ def get_states(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
     # define discrete states for Q-learning based on sector threats/food
     # ///////////////////////////////////////////////////////////////////////////////////////////
 
-    states = [list() for k in range(0, N)]
+    states = []
 
     # sector threat calc
     # sum all visible threat values
@@ -122,7 +124,7 @@ def get_states(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
         else:
             rel_threat = 0
         # add discrete threat value to state matrix
-        states[k].append(rel_threat*10)
+        states.append(-rel_threat*10)
 
     # sector food calc
     total_food = 0 
@@ -136,10 +138,10 @@ def get_states(view, N, MAX_THREAT_LEVEL, MAX_FOOD_LEVEL, playerID):
             rel_food = (sector_food/total_food)
             rel_food = rel_food * MAX_FOOD_LEVEL
             rel_food = np.ceil(rel_food*10)
-        states[k].append(rel_food)
+        states[k] = states[k] + rel_food
 
     # return states with threat and food scoring calculated
-    return states
+    return [states]
 
 
 # Test

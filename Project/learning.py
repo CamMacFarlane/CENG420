@@ -1,24 +1,40 @@
-from flat_game import carmunk
 import numpy as np
 import random
 import csv
 from nn import neural_net, LossHistory
 import os.path
+import time
 import timeit
-import AgarBots
+import AgarBots as ab
+import Q_learning_rough as ql
 
-NUM_INPUT = 3
+REWARD_FOR_EATING = 15
+NUM_INPUT = 16
 GAMMA = 0.9  # Forgetting.
 TUNING = False  # If False, just use arbitrary, pre-selected params.
+
+botId = "WillyTestBot001"
+botName = "Willy's test bot"
+
+def move_to(id,N,maxN):
+    ql.move(id,N,maxN)
+
+    if(ab.isAlive(id)):
+        state, massDelta = ql.getState(id)
+        return ql.reward(state, massDelta),np.asarray(state)
+    else:
+        state = np.array([])
+        ql.createPlayer(botName,botId)
+        return -5000, state
 
 
 def train_net(model, params):
 
     filename = params_to_filename(params)
 
-    observe = 1000  # Number of frames to observe before training.
+    observe = 10  # Number of frames to observe before training.
     epsilon = 1
-    train_frames = 1000000  # Number of frames to play.
+    train_frames = 2000  # Number of frames to play.
     batchSize = params['batchSize']
     buffer = params['buffer']
 
@@ -31,16 +47,16 @@ def train_net(model, params):
 
     loss_log = []
 
-    # create the bot
-    botId = "willy-learning-bot"
-    botName = "learning-bot"
-    ab.makeplayer(botId,botName)
+    ql.createStaticBots(20)
 
-    # get the initiali position of the bot
-    game_state = ab.getPlayerInfo(botId)
+    ql.createPlayer(botName,botId)
+
+    # Create a new game instance.
+    first_view = ab.getView(botId)
 
     # Get initial state by doing nothing and getting the state.
-    _, state = game_state.frame_step((2))
+    first_action = random.randint(0,NUM_INPUT)
+    _, state = move_to(botId,first_action,NUM_INPUT) # move_to will return the new view
 
     # Let's time it.
     start_time = timeit.default_timer()
@@ -48,19 +64,21 @@ def train_net(model, params):
     # Run the frames.
     while t < train_frames:
 
+        print(t)
         t += 1
         travel_distance += 1
 
         # Choose an action.
         if random.random() < epsilon or t < observe:
-            action = np.random.randint(0, 3)  # random
+            action = np.random.randint(0, NUM_INPUT)  # random
         else:
             # Get Q values for each action.
             qval = model.predict(state, batch_size=1)
             action = (np.argmax(qval))  # best
 
         # Take action, observe new state and get our treat.
-        reward, new_state = game_state.frame_step(action)
+
+        reward, new_state = move_to(botId,action,NUM_INPUT)
 
         # Experience replay storage.
         replay.append((state, action, reward, new_state))
@@ -77,12 +95,17 @@ def train_net(model, params):
 
             # Get training values.
             X_train, y_train = process_minibatch(minibatch, model)
-
+            print("X_train:")
+            print(X_train)
+            print('---------------------------')
+            print("y_train:")
+            print(y_train)
+            print('---------------------------')
             # Train the model on this batch.
             history = LossHistory()
             model.fit(
                 X_train, y_train, batch_size=batchSize,
-                nb_epoch=1, verbose=0, callbacks=[history]
+                epochs=1, verbose=0, callbacks=[history]
             )
             loss_log.append(history.losses)
 
@@ -94,7 +117,7 @@ def train_net(model, params):
             epsilon -= (1/train_frames)
 
         # We died, so update stuff.
-        if reward == -500:
+        if reward == -5000:
             # Log the car's distance at this T.
             data_collect.append([t, travel_distance])
 
@@ -146,23 +169,44 @@ def process_minibatch(minibatch, model):
     for memory in minibatch:
         # Get stored values.
         old_state_m, action_m, reward_m, new_state_m = memory
+        print("old_state_m:")
+        print(old_state_m)
+        print('---------------------------')
+        print("action_m:")
+        print(action_m)
+        print('---------------------------')
+        print("reward_m:")
+        print(reward_m)
+        print('---------------------------')
+        print("new_state_m:")
+        print(new_state_m)
+        print('---------------------------')
         # Get prediction on old state.
         old_qval = model.predict(old_state_m, batch_size=1)
+        print("OLD QVAL:")
+        print(old_qval)
+        print('---------------------------')
         # Get prediction on new state.
         newQ = model.predict(new_state_m, batch_size=1)
+        print("NEW QVAL:")
+        print(newQ)
+        print('---------------------------')
         # Get our best move. I think?
         maxQ = np.max(newQ)
-        y = np.zeros((1, 3))
+        print("MAX QVAL:")
+        print(maxQ)
+        print('---------------------------')
+        y = np.zeros((1, NUM_INPUT))
         y[:] = old_qval[:]
         # Check for terminal state.
-        if reward_m != -500:  # non-terminal state
+        if reward_m != -5000:  # non-terminal state
             update = (reward_m + (GAMMA * maxQ))
         else:  # terminal state
             update = reward_m
         # Update the value for the action we took.
         y[0][action_m] = update
         X_train.append(old_state_m.reshape(NUM_INPUT,))
-        y_train.append(y.reshape(3,))
+        y_train.append(y.reshape(NUM_INPUT,))
 
     X_train = np.array(X_train)
     y_train = np.array(y_train)
@@ -217,8 +261,8 @@ if __name__ == "__main__":
         print(2)
         nn_param = [164, 150]
         params = {
-            "batchSize": 100,
-            "buffer": 50000,
+            "batchSize": 5,
+            "buffer": 5000,
             "nn": nn_param
         }
         model = neural_net(NUM_INPUT, nn_param)

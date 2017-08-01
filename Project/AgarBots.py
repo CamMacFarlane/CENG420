@@ -7,15 +7,15 @@ import requests
 import math
 DEBUG = True
 
-url = "http://localhost:3000/"
+serverURL = "http://localhost:3000"
 
+makePlayerURL = serverURL + "/createPlayer"
+movePlayerURL = serverURL + "/move"
+removePlayerURL = serverURL + "/removePlayer"
+getNearbyObjectsURL = serverURL + "/getNearbyObjects"
+createStaticObstaclesURL = serverURL + "/createStaticObstacles"
+getPlayerInfoURL = serverURL + "/getPlayerInfo"
 
-makePlayerURL = url + "createPlayer"
-movePlayerURL = url + "move"
-removePlayerURL = url + "removePlayer"
-getNearbyObjectsURL = url + "getNearbyObjects"
-createStaticObstaclesURL = url + "createStaticObstacles"
-getPlayerInfoURL = url + "getPlayerInfo"
 
 # makePlayer: creates a player with the specified name, ID and mass.
 
@@ -88,7 +88,3 @@ def getPlayerInfo(identifier):
 	if DEBUG: print(r.status_code, r.reason)
 	data = r.json()
 	return data
-
-def frame_step(currentState, action):
-
-
