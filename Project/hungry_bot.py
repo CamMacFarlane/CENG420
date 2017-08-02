@@ -2,7 +2,7 @@ import requests
 import json
 import time
 # domain = "http://0.0.0.0:3000"
-domain = "https://agar-willy-branch.herokuapp.com"
+domain = "http://localhost:3000"
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
 def createPlayer():
