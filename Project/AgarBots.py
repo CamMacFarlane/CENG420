@@ -5,7 +5,7 @@ makes a number of Bots, moves them around randomly for a while, gets the state o
 
 import requests
 import math
-DEBUG = True
+DEBUG = False
 
 serverURL = "http://localhost:3000"
 

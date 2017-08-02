@@ -324,8 +324,8 @@ def reward(state, massDelta):
     total_threat = 0
     for k in real_state:
         total_threat += k
-    if(total_threat > 0):
-        print("THREAT!! :", total_threat)
+    #if(total_threat > 0):
+    #    print("THREAT!! :", total_threat)
 
     return (total_threat + REWARD_FOR_EATING*massDelta)
 

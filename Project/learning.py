@@ -12,12 +12,15 @@ REWARD_FOR_EATING = 15
 NUM_INPUT = 16
 GAMMA = 0.9  # Forgetting.
 TUNING = False  # If False, just use arbitrary, pre-selected params.
+STEP_DELAY = 0.1
 
 botId = "WillyTestBot001"
 botName = "Willy's test bot"
 
 def move_to(id,N,maxN):
     ql.move(id,N,maxN)
+
+    time.sleep(STEP_DELAY)
 
     if(ab.isAlive(id)):
         state, massDelta = ql.getState(id)
@@ -30,11 +33,11 @@ def move_to(id,N,maxN):
 
 def train_net(model, params):
 
-    filename = params_to_filename(params)
+    filename = "weight"
 
-    observe = 10  # Number of frames to observe before training.
+    observe = 300  # Number of frames to observe before training.
     epsilon = 1
-    train_frames = 2000  # Number of frames to play.
+    train_frames = 26000  # Number of frames to play.
     batchSize = params['batchSize']
     buffer = params['buffer']
 
@@ -83,6 +86,7 @@ def train_net(model, params):
         # Experience replay storage.
         replay.append((state, action, reward, new_state))
 
+
         # If we're done observing, start training.
         if t > observe:
 
@@ -95,12 +99,12 @@ def train_net(model, params):
 
             # Get training values.
             X_train, y_train = process_minibatch(minibatch, model)
-            print("X_train:")
-            print(X_train)
-            print('---------------------------')
-            print("y_train:")
-            print(y_train)
-            print('---------------------------')
+            #print("X_train:")
+            #print(X_train)
+            #print('---------------------------')
+            #print("y_train:")
+            #print(y_train)
+            #print('---------------------------')
             # Train the model on this batch.
             history = LossHistory()
             model.fit(
@@ -138,10 +142,8 @@ def train_net(model, params):
             start_time = timeit.default_timer()
 
         # Save the model every 25,000 frames.
-        if t % 25000 == 0:
-            model.save_weights('saved-models/' + filename + '-' +
-                               str(t) + '.h5',
-                               overwrite=True)
+        if t % 500 == 0:
+            model.save_weights('saved-models/' + filename + '.h5', overwrite=True)
             print("Saving model %s - %d" % (filename, t))
 
     # Log results after we're done all frames.
@@ -169,7 +171,8 @@ def process_minibatch(minibatch, model):
     for memory in minibatch:
         # Get stored values.
         old_state_m, action_m, reward_m, new_state_m = memory
-        print("old_state_m:")
+
+        """print("old_state_m:")
         print(old_state_m)
         print('---------------------------')
         print("action_m:")
@@ -180,22 +183,22 @@ def process_minibatch(minibatch, model):
         print('---------------------------')
         print("new_state_m:")
         print(new_state_m)
-        print('---------------------------')
+        print('---------------------------')"""
         # Get prediction on old state.
         old_qval = model.predict(old_state_m, batch_size=1)
-        print("OLD QVAL:")
-        print(old_qval)
-        print('---------------------------')
+        #print("OLD QVAL:")
+        #print(old_qval)
+        #print('---------------------------')
         # Get prediction on new state.
         newQ = model.predict(new_state_m, batch_size=1)
-        print("NEW QVAL:")
-        print(newQ)
-        print('---------------------------')
+        #print("NEW QVAL:")
+        #print(newQ)
+        #print('---------------------------')
         # Get our best move. I think?
         maxQ = np.max(newQ)
-        print("MAX QVAL:")
-        print(maxQ)
-        print('---------------------------')
+        #print("MAX QVAL:")
+        #print(maxQ)
+        #print('---------------------------')
         y = np.zeros((1, NUM_INPUT))
         y[:] = old_qval[:]
         # Check for terminal state.
@@ -265,5 +268,5 @@ if __name__ == "__main__":
             "buffer": 5000,
             "nn": nn_param
         }
-        model = neural_net(NUM_INPUT, nn_param)
+        model = neural_net(NUM_INPUT, nn_param,True)
         train_net(model, params)
