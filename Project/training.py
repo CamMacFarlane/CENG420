@@ -8,7 +8,7 @@ import AgarBots as api2
 import time
 
 def setup():
-    api.removePlayer("kenneth-bot")
+    print("let's begin")
     api.createPlayer("kenneth-bot", "kenneth-bot")
 
 def getRawStates():
@@ -38,9 +38,9 @@ updateModel = trainer.minimize(loss)
 init = tf.global_variables_initializer()
 
 # Set learning parameters
-y = .99
+y = .80
 e = 0.5
-num_episodes = 100
+num_episodes = 1000
 #create lists to contain total rewards and steps per episode
 jList = []
 rList = []
@@ -57,6 +57,7 @@ with tf.Session() as sess:
         #The Q-Network
         while j < 99:
             j+=1
+            print(j)
             #Choose an action by greedily (with e chance of random action) from the Q-network
             a,allQ = sess.run([predict,Qout],feed_dict={inputs1:state})
             if np.random.rand(1) < e:
@@ -73,7 +74,6 @@ with tf.Session() as sess:
             maxQ1 = np.max(Q1)
             targetQ = allQ
             targetQ[0,a[0]] = r + y*maxQ1
-            print(sess.run(W))
             #Train our network using target and predicted Q values
             _,W1 = sess.run([updateModel,W],feed_dict={inputs1:state,nextQ:targetQ})
             rAll += r
@@ -82,6 +82,8 @@ with tf.Session() as sess:
                 #Reduce chance of random action as we train the model.
                 e = 1./((i/50) + 10)
                 break
+        print('episode' + str(i) + 'ends')
+        print(sess.run(W))
         jList.append(j)
         rList.append(rAll)
 print("Percent of succesful episodes: " + str(sum(rList)/num_episodes) + "%")

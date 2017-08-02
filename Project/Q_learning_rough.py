@@ -11,7 +11,7 @@ import math
 # SERVER CONFIG:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
-domain = "http://localhost:3000"
+domain = "https://agar-willy-branch.herokuapp.com"
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 bot_name = "Q_bot"
 

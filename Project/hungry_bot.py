@@ -2,18 +2,18 @@ import requests
 import json
 import time
 # domain = "http://0.0.0.0:3000"
-domain = "http://localhost:3000"
+domain = "https://agar-willy-branch.herokuapp.com"
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
-def createPlayer():
+def createPlayer(name, id):
   removePlayerData = {
-    "name": "hungry_bot",
-    "id": "hungry_bot"
+    "name": name,
+    "id": id
   }
   requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
   createPlayerData = {
-    "name": "hungry_bot",
-    "id": "hungry_bot"
+    "name": name,
+    "id": id
   }
   res = requests.post(domain + '/createPlayer', data=json.dumps(createPlayerData), headers=headers)
   print(res.text)
@@ -42,9 +42,9 @@ def findFood():
     targetY = float(board["food"][0]["y"]) - float(board["players"][0]["y"])
     movePlayer(targetX, targetY)
     time.sleep(5)
-
 def main():
-  createPlayer()
-  findFood()
+  for i in range(20):
+    createPlayer("hungry_bot" + str(i), "hungry_bot" + str(i))
+# findFood()
 
 main()
