@@ -7,12 +7,12 @@ headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
 def createPlayer():
   removePlayerData = {
-    "name": "kenneth_bot",
+    "name": "hungary_bot",
     "id": "deus_ex_machina_bot"
   }
   requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
   createPlayerData = {
-    "name": "kenneth_bot",
+    "name": "hungary_bot",
     "id": "deus_ex_machina_bot"
   }
   res = requests.post(domain + '/createPlayer', data=json.dumps(createPlayerData), headers=headers)
@@ -57,7 +57,7 @@ def findFood():
 
 def removePlayer():
   removePlayerData = {
-    "name": "kenneth_bot",
+    "name": "hungary_bot",
     "id": "deus_ex_machina_bot"
   }
   res = requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)

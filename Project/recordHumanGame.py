@@ -9,9 +9,19 @@ import random
 import math
 import csv
 import hungry_bot as hb
-from DQN_modified import DeepQNetwork
+from sklearn.neural_network import MLPClassifier
+import pandas
 import matplotlib.pyplot as plt
-
+from sklearn import model_selection
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
 
 # SERVER CONFIG:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -20,6 +30,12 @@ domain = "http://localhost:3000"
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 bot_name = "Q_bot"
 
+# Q-LEARNING AND STATE INFO:
+# ///////////////////////////////////////////////////////////////////////////////////////////
+
+memory = list()
+current_state = list()
+previous_state = list()
 
 # HYPERPARAMETERS:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -30,6 +46,8 @@ MAX_FOOD_LEVEL = 10     # Specifies range [0, MAX_FOOD_LEVEL]   for food scaling
 REWARD_FOR_EATING = 10
 REWARD_FOR_DYING = -100
 DEATH_PENALTY = -500    # Value of reward for actions that lead to death
+GAMMA = 0.9             # Q-learning discount rate
+EPSILON = 1             # Q-learning exploration rate
 
 previousLargestMass = 10 
 previousTotalMass = 10
@@ -303,6 +321,7 @@ def reward(state, massDelta):
     # Calculate the reward for a state
     # state is a list of sectors with [[threat0, food0], [threat1, food1], ... ,[ threaN, foodN]]
     #   for sectors 0 -> N
+    
     if(state == "PLAYER_DEAD"):
         return  REWARD_FOR_DYING
 
@@ -316,14 +335,12 @@ def reward(state, massDelta):
     for k in state:
         total_food += k[1]
 
-    ret = total_food  - total_threat
-    if(massDelta > 0):
-        ret = ret + REWARD_FOR_EATING*massDelta
+    return (total_food  - total_threat + REWARD_FOR_EATING*massDelta)
 
-    return ret
+# MAIN
+# ///////////////////////////////////////////////////////////////////////////////////////////
 
-
-def evaluateState(sectorArray):
+def evaluateStateGREEDY(sectorArray):
     bestsector = random.randint(1,len(sectorArray) + 1)
     bestsectorEvaluation = 0
     for sector in sectorArray:
@@ -347,136 +364,151 @@ def formatSectorsForLearning(sectorArray):
         foodArray += [sector[1]]
     return [threatArray, foodArray]
 
-csvFile = "cam_learningData.csv"
 def writeToCSV(learningInformation):
-    #format: [[threatArray], [FoodArray], Move, reward]
-    row = learningInformation[0][0]
-    for k in learningInformation[0][1]:
-        row.append(k) #, learningInformation[1], learningInformation[2]]
-    row.append(learningInformation[1])
-    row.append(learningInformation[2])
+    csvFile = "human_learningData.csv"
+
     with open(csvFile, "a") as output:
         writer = csv.writer(output)
-        writer.writerow(row) 
+        writer.writerow(learningInformation)   
 
-# numRounds = 10
-# print("Start")
-# for i in range(numRounds):
-#     runRound()
-#     print(i," ",previousTotalMass)
-def learn():
-    N_FEAT = 32
-    roundLimit = 1000
-    global previousTotalMass 
-    RL = DeepQNetwork(17, N_FEAT,
-                      learning_rate=0.05,
-                      reward_decay=0.9,
-                      e_greedy=0.9,
-                      replace_target_iter=25,
-                      memory_size=1000,
-                      output_graph=True,
-                      # e_greedy_increment = 0.01
-
-                      )
+def runRound():
+    global clf
     first = True
     playerID = 420 + random.randint(0,10)
-    tick_limit = 150
+    createPlayer("testBot" + str(playerID), playerID)
+    tick_limit = 500000
     hb.createPlayer()
-    tock = 0
-    
     learningInformation = list()
-
     previousOberservation = list()
-    results = list()
-    resultsVRandom = list()
-    resultsVHungry = list()
+    numStaticBots = 10
+    createStaticBots(numStaticBots)
 
-    for round_v in range(roundLimit):
-        createPlayer("testBot" + str(playerID), playerID)
-        createPlayer("BENCH" + str(playerID),playerID + 1)
-        for tick in range (tick_limit):
-        # for i in range(0, 1000):
+    for tick in range (tick_limit):
+        hb.findFood()
+        sectors, massDelta = getState(playerID)
+        reward_v = reward(sectors, massDelta)
 
-            hb.findFood()
-
+        if(reward_v == REWARD_FOR_DYING):
+            #respawn
+            print("loss")
+            break;
+            createPlayer("testBot" + str(playerID), playerID)
+            previousLargestMass = 10 
+            previousTotalMass = 10
+            time.sleep(0.5)
             sectors, massDelta = getState(playerID)
-            reward_v = reward(sectors, massDelta)
-            # print(reward_v)
-            if(reward_v == REWARD_FOR_DYING):
-                #respawn
-                print("loss")
-                break;
-                createPlayer("testBot" + str(playerID), playerID)
-                previousLargestMass = 10 
-                previousTotalMass = 10
-                time.sleep(0.5)
-                sectors, massDelta = getState(playerID)
-            else:
-                threatAndFoodArrays = formatSectorsForLearning(sectors)
-                observation = np.array(threatAndFoodArrays[0] + threatAndFoodArrays[1])
-
-                if(len(previousOberservation) > 0):
-                    action = RL.choose_action(observation)
-                else:
-                    action = evaluateStateRANDOM(sectors)
-                # action = evaluateState(sectors)#evaluateStateRANDOM(sectors)
-
-
-            if(len(previousOberservation) > 0):
-                 RL.store_transition(previousOberservation, prevousAction, reward_v, observation)
-
-            
+        else:
+            threatAndFoodArrays = formatSectorsForLearning(sectors)
             observation = threatAndFoodArrays[0] + threatAndFoodArrays[1]
+            observation__ = np.array(observation)
+            print(observation__)
+            action =  clf.predict(observation__.reshape(1, -1))[0]
+            action = int(action)
+            print(action)
+            #evaluateStateGREEDY(sectors)
 
-
-            previousOberservation = observation
-            prevousAction = action
-
-
-            move(playerID, action, len(sectors) + 1)
-            move(playerID + 1, random.randint(1,len(sectors) +1), (len(sectors) +1))
-
-            time.sleep(0.25)
+        learningInformation = list()
+        observation = threatAndFoodArrays[0] + threatAndFoodArrays[1]
+        
+        if(len(previousOberservation) > 0):
+            learningInformation = previousOberservation + [prevousAction] + [reward_v] + observation 
+            # writeToCSV(learningInformation)
             
-            if (tock > 1) and ((tock % 10) == 0) :
-                RL.learn()
-                # print("learn")
-                # print(reward_v)
-            tock = tock + 1
-
-        removePlayer("testBot" + str(playerID), playerID)
-        
-        randScoreDelta = getState(playerID + 1)[1]
-        if(randScoreDelta == "PLAYER_DEAD"):
-            randScoreDelta = 100
-        resultsVRandom.append(0 - randScoreDelta)
-        
-        hungryScoreDelta = getState("deus_ex_machina_bot")[1]
-        if(hungryScoreDelta == "PLAYER_DEAD"):
-            randScoreDelta = 100
-        resultsVHungry.append(0 - hungryScoreDelta)
-        
 
 
-        removePlayer("BENCH" + str(playerID), playerID + 1)
-        # print(resultsVRandom)
-        # print(resultsVHungry)
-        hb.removePlayer()
-        results.append(previousTotalMass)
-        previousTotalMass = 0
-        print(round_v, "/", roundLimit)
+        previousOberservation = observation
+        prevousAction = action
+        move(playerID, action, len(sectors) + 1)
+
+        time.sleep(0.1)
+
+    removePlayer("testBot" + str(playerID), playerID)
+    hb.removePlayer()
+    removeStaticBots(numStaticBots)
+
+###############################################
+previous_x = 0
+previous_y = 0
+csv_file = "human_learningData.csv"
+def getAction(playerID):
+    global previous_y, previous_x
+    view = getBoardState(playerID)
+    
+    if(view == "PLAYER_DEAD"):
+        return "PLAYER_DEAD", "PLAYER_DEAD"
+    # extract enemy data
+    enemies = [view["players"][k] for k in range(0, len(view["players"]))] 
+    # extract food data
+    food = [view["food"][k] for k in range(0, len(view["food"]))]
+    
+    # generate new information for each enemy
+    for k in enemies:
+        #need to figure out which player we are then convert the absolute coordinates to relative
+        if(k["id"] == playerID):
+            player_y = k["y"]
+            player_x = k["x"]
+            currentLargestMass, currentTotalMass = getMassOfPlayer(k)
+            enemies.remove(k)
+    angle = np.arctan2((player_y - previous_y), (player_x - previous_x))
+    sectors = list()
+    previous_x = player_x
+    previous_y = player_y
+    # generate sector edges, 
+    #   since -pi and pi are count as different edges, need to add 1 to N to get correct angles
+    sector_edges = np.linspace(-np.pi, np.pi, N+1)
+
+    # define edges for each sector
+    for k in range(0, N):
+        f = {"edge1": 0, "edge2": 0, "threats": [], "food": []}
+
+        f["edge1"] = sector_edges[k] 
+        f["edge2"] = sector_edges[k+1]
+        sectors.append(f)
+    for sector in sectors:
+        # if the food angle is within the edges of a sector
+        if (angle > sector["edge1"] and angle < sector["edge2"]):
+            return sectors.index(sector) + 1
+
+def findID(playerName):
+    FOUND_ID = False
+    NUM_BOTS = 10
+    while(not FOUND_ID):
+        for i in range(NUM_BOTS):
+            data = getBoardState("staticBot_" + str(i))
+            for item in data["players"]:
+                if item["name"] == playerName:
+                    PLAYER_ID = item["id"]
+                    print("\n\nfound player ID!\n")
+                    print(PLAYER_ID)
+                    FOUND_ID = True
+        time.sleep(0.5)
+    return PLAYER_ID
+
+
+def captureHumanData():
+    PLAYER_ID = findID("human")
+    hb.createPlayer()
+    previousOberservation = list()
+    while(True):
+        hb.findFood()
+        sectors, massDelta = getState(PLAYER_ID)
+        threatAndFoodArrays = formatSectorsForLearning(sectors)
+        observation = threatAndFoodArrays[0] + threatAndFoodArrays[1]
+
+        action = getAction(PLAYER_ID)
+        if(len(previousOberservation)>0):
+            learningInformation = previousOberservation + [action]
+            writeToCSV(learningInformation)
+        previousOberservation = observation
+
+numStaticBots = 10
+createStaticBots(numStaticBots)
+captureHumanData()
 
 
 
 
-        print(results)
-    plt.plot(results, label="NN Bot")
-    plt.plot(resultsVRandom, label="NN Bot vs Random")
-    plt.plot(resultsVHungry, label="NN Bot vs Hungry")
-    plt.ylabel('End Mass')
-    plt.xlabel('Iteration')
-    plt.legend()
-    plt.show()
-learn()
+
+
 
 

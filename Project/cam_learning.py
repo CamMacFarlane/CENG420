@@ -371,11 +371,25 @@ def writeToCSV(learningInformation):
         writer.writerow(learningInformation)   
 
 def runRound():
-    global clf
+    global clf, clf_human
+    global previousTotalMass
     first = True
-    playerID = 420 + random.randint(0,10)
-    createPlayer("testBot" + str(playerID), playerID)
-    tick_limit = 500000
+    
+    ht_playerID = 420 + random.randint(0,10)
+    greedy_trained_player_ID = ht_playerID + 1
+    greedy_player_ID = ht_playerID + 2
+
+    playerID = ht_playerID
+    
+    greedy_mass = 0
+    human_trained_mass = 0
+    greedy_trained_mass = 0
+
+    createPlayer("human_trained", ht_playerID)
+    createPlayer("greedy_trained", greedy_trained_player_ID)
+    createPlayer("greedy", greedy_player_ID)
+    
+    tick_limit = 10000
     hb.createPlayer()
     learningInformation = list()
     previousOberservation = list()
@@ -383,15 +397,36 @@ def runRound():
     createStaticBots(numStaticBots)
 
     for tick in range (tick_limit):
+        if(playerID == ht_playerID):
+            human_trained_mass = previousTotalMass
+        elif(playerID == greedy_trained_player_ID):
+            greedy_trained_mass = previousTotalMass
+        else:
+            greedy_mass = previousTotalMass
+        print("Human Trained:", human_trained_mass, "Greedy Trained:", greedy_trained_mass, "Greedy:", greedy_mass, "\r", end="")
+
         hb.findFood()
+        if(playerID == ht_playerID):
+            playerID = greedy_trained_player_ID
+        elif(playerID == greedy_trained_player_ID):
+            playerID = greedy_player_ID
+        else:
+            playerID = ht_playerID
+
         sectors, massDelta = getState(playerID)
         reward_v = reward(sectors, massDelta)
 
         if(reward_v == REWARD_FOR_DYING):
-            #respawn
-            print("loss")
-            break;
-            createPlayer("testBot" + str(playerID), playerID)
+            if(playerID == ht_playerID):
+                # print("HUMAN TRAINED DIED")
+                createPlayer("human_trained", playerID)
+            elif(playerID == greedy_trained_player_ID):
+                # print("GREEDY TRAINED DIED")
+                createPlayer("greedy_trained", playerID)
+            else:
+                # print("GREEDY DIED")
+                createPlayer("greedy", playerID)
+            # print("loss")
             previousLargestMass = 10 
             previousTotalMass = 10
             time.sleep(0.5)
@@ -400,10 +435,13 @@ def runRound():
             threatAndFoodArrays = formatSectorsForLearning(sectors)
             observation = threatAndFoodArrays[0] + threatAndFoodArrays[1]
             observation__ = np.array(observation)
-            print(observation__)
-            action =  clf.predict(observation__.reshape(1, -1))[0]
+            if(playerID == ht_playerID):
+                action =  clf_human.predict(observation__.reshape(1, -1))[0]
+            elif(playerID == greedy_trained_player_ID):
+                action =  clf.predict(observation__.reshape(1, -1))[0]
+            else:
+                action = evaluateStateGREEDY(sectors)
             action = int(action)
-            print(action)
             #evaluateStateGREEDY(sectors)
 
         learningInformation = list()
@@ -419,18 +457,36 @@ def runRound():
         prevousAction = action
         move(playerID, action, len(sectors) + 1)
 
-        time.sleep(0.1)
+        time.sleep(0.033)
 
     removePlayer("testBot" + str(playerID), playerID)
     hb.removePlayer()
     removeStaticBots(numStaticBots)
 
 ###############################################
+print("training net of human data")
+csv_file = "human_learningData.csv"
 
+dataset = pandas.read_csv(csv_file)
+dataset = dataset.dropna()
+dataset.isnull().any()
+array = dataset.values
+X = array[:,0:32]
+Y = array[:,32]
+validation_size = 0.20
+seed = 7
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size, random_state=seed)
+
+
+clf_human = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(32, 16), random_state=1)
+clf_human.fit(X_train, Y_train)                         
+
+print("training net of greedy data")
 csv_file = "cam_learningData.csv"
 
 dataset = pandas.read_csv(csv_file)
-
+dataset = dataset.dropna()
+dataset.isnull().any()
 array = dataset.values
 X = array[:,0:32]
 Y = array[:,32]
@@ -441,14 +497,6 @@ X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(
 
 clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(32, 16), random_state=1)
 clf.fit(X_train, Y_train)                         
-# MLPClassifier(activation='relu', alpha=1e-05, batch_size='auto',
-#        beta_1=0.9, beta_2=0.999, early_stopping=False,
-#        epsilon=1e-08, hidden_layer_sizes=(5, 2), learning_rate='constant',
-#        learning_rate_init=0.001, max_iter=200, momentum=0.9,
-#        nesterovs_momentum=True, power_t=0.5, random_state=1, shuffle=True,
-#        solver='lbfgs', tol=0.0001, validation_fraction=0.1, verbose=False,
-#        warm_start=False)
-
 
 numRounds = 10
 print("Start")
