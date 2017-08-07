@@ -183,7 +183,23 @@ def getState(playerID):
     enemies = [view["players"][k] for k in range(0, len(view["players"]))] 
     # extract food data
     food = [view["food"][k] for k in range(0, len(view["food"]))]
-    
+
+    # group enemies/food by sector
+    # create list to hold information for each sector
+    sectors = list()
+
+    # generate sector edges,
+    #   since -pi and pi are count as different edges, need to add 1 to N to get correct angles
+    sector_edges = np.linspace(-np.pi, np.pi, N+1)
+
+    # define edges for each sector
+    for k in range(0, N):
+        f = {"edge1": 0, "edge2": 0, "threats": [], "food": []}
+
+        f["edge1"] = sector_edges[k]
+        f["edge2"] = sector_edges[k+1]
+        sectors.append(f)
+
     # generate new information for each enemy
     for k in enemies:
         #need to figure out which player we are then convert the absolute coordinates to relative
@@ -193,19 +209,14 @@ def getState(playerID):
             currentLargestMass, currentTotalMass = getMassOfPlayer(k)
             enemies.remove(k)
 
-    listOfFood = list()
     #If an enemy is smaller than us consider it food
     for k in enemies:
         largestMassOfEnemyk, totalMassOfEnemyk = getMassOfPlayer(k)
-        print("num enemies: ", len(enemies))
-        if(largestMassOfEnemyk < 1.15*currentLargestMass):
+        #print("num enemies: ", len(enemies))
+        if(largestMassOfEnemyk*1.15 < currentLargestMass):
             print("food not enemy", enemies.index(k))
             food.append(playerToFood(k))
-            listOfFood.append(k)
-    
-    for i in listOfFood:
-        enemies.remove(i)
-        print("remaining enemies after removeal:", len(enemies))
+            enemies.remove(k)
 
     for k in enemies:
         # new features to be calculated
@@ -214,38 +225,9 @@ def getState(playerID):
             
             # determine new feature values
             f["angle"] = np.arctan2(k["y"], k["x"])
-            f["threat"] = threat(k["x"], k["y"], k['cells'][0]['mass'])
+            f["threat"] = threat(k["x"]-player_x, k["y"]-player_y, k['cells'][0]['mass'])
             # add features to each enemy after calculation
             k.update(f)
-
-    # calculate angle and distance of food for sector placement
-    for k in food:
-        f = dict()
-        f["angle"] = np.arctan2(k["y"] - player_y, k["x"] - player_x)
-        f["distance"] = distance_inverse(abs(k["x"] -player_x), abs(k["y"] - player_y))
-        f["value"] = np.floor(MAX_FOOD_LEVEL*10*k["mass"]*f["distance"])
-        # print(f["value"])
-        k.update(f)
-
-    # group enemies/food by sector
-    # create list to hold information for each sector
-    sectors = list()
-
-    # generate sector edges, 
-    #   since -pi and pi are count as different edges, need to add 1 to N to get correct angles
-    sector_edges = np.linspace(-np.pi, np.pi, N+1)
-
-    # define edges for each sector
-    for k in range(0, N):
-        f = {"edge1": 0, "edge2": 0, "threats": [], "food": []}
-
-        f["edge1"] = sector_edges[k] 
-        f["edge2"] = sector_edges[k+1]
-        sectors.append(f)
-        
-    # define threats in each sector
-    for k in enemies:
-        if(len(k['cells']) > 0):
 
             # get enemy angle
             angle = k["angle"]
@@ -256,8 +238,14 @@ def getState(playerID):
                     # add that enemy's threat score to the list of threats in that sector
                     sector["threats"].append(k["threat"])
 
-    # define food in each sector
+    # calculate angle and distance of food for sector placement
     for k in food:
+        f = dict()
+        f["angle"] = np.arctan2(k["y"] - player_y, k["x"] - player_x)
+        f["value"] = threat(k["x"]-player_x, k["y"]-player_y, k['mass'])
+        # print(f["value"])
+        k.update(f)
+
         angle = k["angle"]
         # check which sector the enemy is in
         for sector in sectors:
@@ -287,11 +275,11 @@ def getState(playerID):
         #   use np.ceil() to get an discrete value, overestimate the threat to err on the side of caution
         #   multiply by MAX_THREAT_LEVEL to scale threat into discrete range
         if(total_threat != 0):
-            rel_threat = np.ceil((sector_threat/total_threat)*MAX_THREAT_LEVEL)
+            rel_threat = sector_threat
         else:
             rel_threat = 0
         # add discrete threat value to state list
-        sectorEvaluations.append(-rel_threat)
+        sectorEvaluations.append(-rel_threat*100)
 
     # sector food calc
     total_food = 0 
@@ -302,10 +290,8 @@ def getState(playerID):
         rel_food = 0
         if(total_food != 0 ):
             sector_food = sum(sectors[k]["food"])
-            rel_food = (sector_food/total_food)
-            rel_food = rel_food * MAX_FOOD_LEVEL
-            rel_food = np.ceil(rel_food)
-        sectorEvaluations[k] += rel_food
+            rel_food = sector_food
+        sectorEvaluations[k] += rel_food*30
 
     massDelta = currentTotalMass - previousTotalMass
     

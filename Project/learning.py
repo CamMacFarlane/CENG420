@@ -17,6 +17,19 @@ STEP_DELAY = 0.1
 botId = "WillyTestBot001"
 botName = "Willy's test bot"
 
+def get_max_sector(state):
+    temp = state[0]
+    max_sector = 0
+    max_value = temp[0]
+    k = 0
+
+    for i in temp:
+        if(i> max_value):
+            max_sector = k
+            max_value = i
+        k= k+1
+    return max_sector
+
 def move_to(id,N,maxN):
     ql.move(id,N,maxN)
 
@@ -78,6 +91,8 @@ def train_net(model, params):
             # Get Q values for each action.
             qval = model.predict(state, batch_size=1)
             action = (np.argmax(qval))  # best
+
+            action = get_max_sector(state)
 
         # Take action, observe new state and get our treat.
 
@@ -172,7 +187,7 @@ def process_minibatch(minibatch, model):
         # Get stored values.
         old_state_m, action_m, reward_m, new_state_m = memory
 
-        """print("old_state_m:")
+        print("old_state_m:")
         print(old_state_m)
         print('---------------------------')
         print("action_m:")
@@ -183,7 +198,7 @@ def process_minibatch(minibatch, model):
         print('---------------------------')
         print("new_state_m:")
         print(new_state_m)
-        print('---------------------------')"""
+        print('---------------------------')
         # Get prediction on old state.
         old_qval = model.predict(old_state_m, batch_size=1)
         #print("OLD QVAL:")
@@ -268,5 +283,5 @@ if __name__ == "__main__":
             "buffer": 5000,
             "nn": nn_param
         }
-        model = neural_net(NUM_INPUT, nn_param,True)
+        model = neural_net(NUM_INPUT, nn_param,False)
         train_net(model, params)
