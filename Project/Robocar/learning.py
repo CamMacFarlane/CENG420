@@ -1,14 +1,15 @@
-from flat_game import carmunk
-import numpy as np
+from AgarControls import AgarBots 
+from state import state_function
 import random
 import csv
 from nn import neural_net, LossHistory
 import os.path
 
-NUM_SENSORS = 183  # The input size of our NN.
+NUM_SENSORS = 8  # The input size of our NN.
 GAMMA = 0.9  # Forgetting.
 TUNING = False  # If false, just use arbitrary, pre-selected params.
-
+NUM_ENEMIES = 10   # number of static opponents. 
+STEP_DELAY = 0
 
 def train_net(model, params):
 
@@ -16,12 +17,12 @@ def train_net(model, params):
 
     observe = 1000  # Number of frames to observe before training.
     epsilon = 1
-    train_frames = 1000000  # Number of frames to play.
+    train_time = 10000  # Number of frames to play.
     batchSize = params['batchSize']
     buffer = params['buffer']
 
     # Just stuff used below.
-    max_car_distance = 0
+    max_duration = 0                                                                    # max_car_distance = 0
     t = 0
     data_collect = []
     replay = []  # stores tuples of (S, A, R, S').
@@ -30,24 +31,25 @@ def train_net(model, params):
 
     while t < train_frames:
         # Create a new game instance.
-        game_state = carmunk.GameState()
-        status = 1
+        playerID = agarBots.startGame(NUM_ENEMIES)                                        # game_state = carmunk.GameState()
         # Get initial state by doing nothing and getting the state.
-        _, state = game_state.frame_step((2))
+        sectors = state_function.get_states(view, 16, 10, 10, playerID)                   # _, state = game_state.frame_step((2))
 
-        car_distance = 0  # Reset.
+        duration = 0  # Reset.
 
-        while status == 1:
+        while(agarBots.isAlive(playerID)):                                                 # while status == 1:              
             t += 1
-            car_distance += 1
+            duration += 1
 
             # Get Q values for each action.
             qval = model.predict(state, batch_size=1)
             # Choose an action.
             if random.random() < epsilon or t < observe:
-                action = np.random.randint(0, 3)  # random
+                action = np.random.randint(0, 8)  # random
             else:
                 action = (np.argmax(qval))  # best
+            # Take action,
+            AgarBots.move(playerID, action) 
 
             # Take action, observe new state and get our treat.
             reward, new_state = game_state.frame_step(action)
@@ -84,10 +86,10 @@ def train_net(model, params):
                 epsilon -= (1/train_frames)
 
             # We died, so update stuff.
-            if reward == -500:
+            if not isAlive(playerID):                                               #if reward == -500:
                 status = 0
-                if car_distance > max_car_distance:
-                    max_car_distance = car_distance
+                if duration > max_duration:
+                    max_duaration = duration
 
                     # Save the model.
                     if car_distance > 200:
@@ -96,9 +98,9 @@ def train_net(model, params):
                                            overwrite=True)
 
         # Log the car's distance at this T.
-        data_collect.append([t, car_distance])
+        data_collect.append([t, duration])
         print("Max: %d at %d\tepsilon %f\t(%d)" %
-              (max_car_distance, t, epsilon, car_distance))
+              (max_duration, t, epsilon, duration))
 
     # Log results after we're done all frames.
     log_results(filename, data_collect, loss_log)

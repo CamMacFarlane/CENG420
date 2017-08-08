@@ -8,15 +8,17 @@ import time
 
 NUM_BOTS = 10
 
-removePlayerURL = "https://agar-willy-branch.herokuapp.com/removePlayer"
+host = "http://localhost:3000"
+removePlayerURL = host + "/removePlayer"
 
 def removeplayer(identifier):
 	r = requests.post(removePlayerURL, headers={"content-type": "application/json"}, json={"id": identifier})
 	print(r.status_code, r.reason)
 
-ID = str(4732)
+ID = "420"
 
 for i in range(0, NUM_BOTS):
-	playerID = ID + str(i)
+	playerID = "staticBot_" + str(i)
 	removeplayer(playerID)
 
+removeplayer("hero")

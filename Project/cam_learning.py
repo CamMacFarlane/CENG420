@@ -7,6 +7,21 @@ import json
 import time
 import random
 import math
+import csv
+import hungry_bot as hb
+from sklearn.neural_network import MLPClassifier
+import pandas
+import matplotlib.pyplot as plt
+from sklearn import model_selection
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
 
 # SERVER CONFIG:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -19,14 +34,6 @@ bot_name = "Q_bot"
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
 memory = list()
-# memory = { {  'state': [ [threat0, food0], [threat1, food1], ..., [threatN, foodN] ], 
-#               'action': number in interval [0, N], 
-#               'reward': reward value for new state, 
-#               'new_state': [ [threat0, food0], [threat1, food1], ..., [threatN, foodN] ] },
-#            ...,
-#            {}
-#          }
-
 current_state = list()
 previous_state = list()
 
@@ -45,27 +52,13 @@ EPSILON = 1             # Q-learning exploration rate
 previousLargestMass = 10 
 previousTotalMass = 10
 
+LR = 0.001
+score_requirement = 40
+initalGames = 1
 # FUNCTIONS:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
 # SERVER FUNCTIONS:
-
-def getConfig():
-    settings = requests.get(domain + '/getConfig', headers=headers)
-    try:
-        ret = settings.text
-    except ValueError:
-        ret = "error"
-    return ret
-
-def setConfig(radius, botMass):
-    params = {
-        "detectableRadius": radius,
-        "staticBotMass": botMass
-    }
-    response = requests.post(domain + '/setConfig', headers=headers)
-    print(response)
-
 
 def createPlayer(name, identifier):
   removePlayerData = {
@@ -78,7 +71,7 @@ def createPlayer(name, identifier):
     "id": identifier
   }
   res = requests.post(domain + '/createPlayer', data=json.dumps(createPlayerData), headers=headers)
-  print(res.text)
+  # print(res.text)
 
 def movePlayer(identifier, x, y):
   url = domain + '/move'
@@ -107,7 +100,7 @@ def removePlayer(name, identifier):
     "id": identifier
   }
   res = requests.post(domain + '/removePlayer', data=json.dumps(removePlayerData), headers=headers)
-  print(res.text)
+  # print(res.text)
 
 def isAlive(identifier):
     r = requests.post(getPlayerInfoURL, headers={"content-type": "application/json"}, json={"id": identifier})
@@ -209,7 +202,7 @@ def getState(playerID):
     for k in enemies:
         largestMassOfEnemyk, totalMassOfEnemyk = getMassOfPlayer(k)
         # print("num enemies: ", len(enemies))
-        if(1.15x*largestMassOfEnemyk < currentLargestMass):
+        if(1.15*largestMassOfEnemyk < currentLargestMass):
             # print("food not enemy", enemies.index(k))
             food.append(playerToFood(k))
             listOfFood.append(k)
@@ -328,14 +321,15 @@ def reward(state, massDelta):
     # Calculate the reward for a state
     # state is a list of sectors with [[threat0, food0], [threat1, food1], ... ,[ threaN, foodN]]
     #   for sectors 0 -> N
+    
     if(state == "PLAYER_DEAD"):
         return  REWARD_FOR_DYING
 
     total_threat = 0
     for k in state:
         total_threat += k[0]
-    if(total_threat > 0):
-        print("THREAT!! :", total_threat)
+    # if(total_threat > 0):
+        # print("THREAT!! :", total_threat)
     
     total_food = 0
     for k in state:
@@ -346,17 +340,7 @@ def reward(state, massDelta):
 # MAIN
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
-def testGetState():
-    playerID = 100
-    createPlayer("testBot" + str(playerID), playerID)
-    state, massDelta = getState(playerID)
-    reward_v = reward(state, massDelta)
-    print(reward_v)
-    removePlayer("testBot" + str(playerID), playerID)
-
-# testGetState()
-
-def evaluateState(sectorArray):
+def evaluateStateGREEDY(sectorArray):
     bestsector = random.randint(1,len(sectorArray) + 1)
     bestsectorEvaluation = 0
     for sector in sectorArray:
@@ -368,35 +352,122 @@ def evaluateState(sectorArray):
             bestsectorEvaluation = evaluation
     return bestsector
 
-def testRewardFunciton():
+def evaluateStateRANDOM(sectorArray):
+    bestsector = random.randint(1,len(sectorArray) + 1)
+    return bestsector
+
+def formatSectorsForLearning(sectorArray):
+    threatArray = []
+    foodArray = []
+    for sector in sectorArray:
+        threatArray += [sector[0]]
+        foodArray += [sector[1]]
+    return [threatArray, foodArray]
+
+csvFile = "cam_learningData.csv"
+outputFile = "test_results.csv"
+
+def writeToCSV(learningInformation):
+    with open(csvFile, "a") as output:
+        writer = csv.writer(output)
+        writer.writerow(learningInformation)   
+
+def runRound():
+    global clf
+    first = True
     playerID = 420 + random.randint(0,10)
     createPlayer("testBot" + str(playerID), playerID)
-    # createStaticBots(20)
-    while(True):
-    # for i in range(0, 1000):
+    tick_limit = 2000
+#   hb.createPlayer()
+    learningInformation = list()
+    previousOberservation = list()
+    numStaticBots = 10
+    createStaticBots(numStaticBots)
+    sizePlot = []
+
+    for tick in range (tick_limit):
+#        hb.findFood()
         sectors, massDelta = getState(playerID)
-        # print(playerID, sectors)
-        
         reward_v = reward(sectors, massDelta)
-        # print("Reward: ", reward_v)
+
         if(reward_v == REWARD_FOR_DYING):
             #respawn
+            print("loss")
+            break;
             createPlayer("testBot" + str(playerID), playerID)
             previousLargestMass = 10 
             previousTotalMass = 10
+            time.sleep(0.5)
+            sectors, massDelta = getState(playerID)
         else:
-            sector = evaluateState(sectors) 
-        # print("Sector Evaluations: ", sectors)
-        # print("Chose:", sector, sectors[sector - 1])
-            move(playerID, sector, len(sectors) + 1)
-            time.sleep(random.random())
+            threatAndFoodArrays = formatSectorsForLearning(sectors)
+            observation = threatAndFoodArrays[0] + threatAndFoodArrays[1]
+            observation__ = np.array(observation)
+            print(str(observation__) + " round: " + str(tick))
+            action =  clf.predict(observation__.reshape(1, -1))[0]
+            action = int(action)
+            #action = evaluateStateGREEDY(sectors)
+            print(action)
+
+
+        learningInformation = list()
+        observation = threatAndFoodArrays[0] + threatAndFoodArrays[1]
+        view = getBoardState(playerID)
+        size = view["players"][0]["cells"][0]["radius"]
+        sizePlot = sizePlot + [size]
+        
+        if(len(previousOberservation) > 0):
+            learningInformation = previousOberservation + [prevousAction] + [reward_v] + observation 
+            # writeToCSV(learningInformation)
+            
+
+
+        previousOberservation = observation
+        prevousAction = action
+        move(playerID, action, len(sectors) + 1)
+
+        time.sleep(0.1)
 
     removePlayer("testBot" + str(playerID), playerID)
-    removeStaticBots(10)
+#    hb.removePlayer()
+    removeStaticBots(numStaticBots)
 
-# testRewardFunciton()
+    # Add sizePlot to .csv
 
-def main():
-    pass
+    sizePlot = ["2000 radius 1000"] + sizePlot
 
-main()
+#    with open(outputFile, "a") as output:
+#       writer = csv.writer(output)
+#       writer.writerow(sizePlot)   
+
+
+###############################################
+
+csv_file = "cam_learningData3000.csv"
+
+dataset = pandas.read_csv(csv_file)
+
+array = dataset.values
+X = array[:,0:32]
+Y = array[:,32]
+validation_size = 0.20
+seed = 7
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size, random_state=seed)
+
+
+clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(32, 16), random_state=1)
+clf.fit(X_train, Y_train)                         
+# MLPClassifier(activation='relu', alpha=1e-05, batch_size='auto',
+#        beta_1=0.9, beta_2=0.999, early_stopping=False,
+#        epsilon=1e-08, hidden_layer_sizes=(5, 2), learning_rate='constant',
+#        learning_rate_init=0.001, max_iter=200, momentum=0.9,
+#        nesterovs_momentum=True, power_t=0.5, random_state=1, shuffle=True,
+#        solver='lbfgs', tol=0.0001, validation_fraction=0.1, verbose=False,
+#        warm_start=False)
+
+
+numRounds = 1
+print("Start")
+for i in range(numRounds):
+    runRound()
+    print(i," ",previousTotalMass)

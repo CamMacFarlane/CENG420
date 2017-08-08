@@ -8,18 +8,22 @@ This doesn't seem to work right now. Will work on expanding radius and generatin
 
 import csv
 from sklearn.neural_network import MLPClassifier
+import numpy as np
 
-N = 16
+N = 16										# Number of moves to be taken during the test. 
+ALG = "Greedy"								# Use this to specify which algorithm is used for the test.
+RADIUS = 1000
 
-with open('trainingData.csv', newline='') as csvfile:
+filename = "TrainingData_Radius" + str(RADIUS) + "_ALG_" + ALG + "_N_" + str(N) + ".csv"
+
+with open(filename, newline='') as csvfile:
 	row_count = sum(1 for row in csvfile)
 csvfile.close()
 
 testData = [[0 for x in range((2*N))] for y in range(row_count)]
 testLabels = [0 for y in range(row_count)]
 
-
-with open('trainingData.csv', newline='') as csvfile:
+with open(filename, newline='') as csvfile:
      testreader = csv.reader(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
      i = 0
      for row in testreader:
@@ -28,6 +32,9 @@ with open('trainingData.csv', newline='') as csvfile:
      	testLabels[i] = int(float(row[32].replace(' ', '')))
      	i += 1
 
+testData = np.array(testData)
+testLabels = np.array(testLabels)
+
 clf = MLPClassifier(solver='lbfgs', alpha=1e-5,
                      hidden_layer_sizes=(5, 2), random_state=1)
 
@@ -35,7 +42,7 @@ clf.fit(testData, testLabels)
 
 print("Neural net Constructed & online!")
 
-MLPClassifier(activation='relu', alpha=1e-05, batch_size='auto',
+MLPClassifier(activation='relu', alpha=1e-04, batch_size='auto',
        beta_1=0.9, beta_2=0.999, early_stopping=False,
        epsilon=1e-08, hidden_layer_sizes=(5, 2), learning_rate='constant',
        learning_rate_init=0.001, max_iter=200, momentum=0.9,
@@ -59,7 +66,6 @@ def SamDecide(state):
 		for item in sector:
 			stateArray[i] = float(item)
 			i += 1
-	print(stateArray)
-
+	stateArray = np.array(stateArray)
 	# return prediction from NN
-	return clf.predict(stateArray)
+	return clf.predict(stateArray.reshape(1,-1))
