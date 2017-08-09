@@ -43,7 +43,6 @@ EPSILON = 1             # Q-learning exploration rate
 previousLargestMass = 10 
 previousTotalMass = 10
 
-LR = 0.001
 score_requirement = 40
 initalGames = 10
 # FUNCTIONS:
