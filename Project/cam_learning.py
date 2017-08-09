@@ -13,7 +13,7 @@ from sklearn.neural_network import MLPClassifier
 import pandas
 import matplotlib.pyplot as plt
 from sklearn import model_selection
-
+from sklearn.linear_model import LogisticRegression
 # SERVER CONFIG:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -369,17 +369,19 @@ def runRound():
     ht_playerID = 420 + random.randint(0,10)
     greedy_trained_player_ID = ht_playerID + 1
     greedy_player_ID = ht_playerID + 2
+    LR_player_ID = ht_playerID + 3
 
     playerID = ht_playerID
     
     greedy_mass = 0
     human_trained_mass = 0
     greedy_trained_mass = 0
+    LR_mass = 0
 
     createPlayer("human_trained", ht_playerID)
     createPlayer("greedy_trained", greedy_trained_player_ID)
     createPlayer("greedy", greedy_player_ID)
-    
+    createPlayer("Logical Regression", LR_player_ID)
     tick_limit = 10000
     hb.createPlayer()
     learningInformation = list()
@@ -392,6 +394,8 @@ def runRound():
             human_trained_mass = previousTotalMass
         elif(playerID == greedy_trained_player_ID):
             greedy_trained_mass = previousTotalMass
+        elif(playerID == LR_player_ID):
+            LR_mass = previousTotalMass
         else:
             greedy_mass = previousTotalMass
         print("Human Trained:", human_trained_mass, "Greedy Trained:", greedy_trained_mass, "Greedy:", greedy_mass, "\r", end="")
@@ -400,6 +404,8 @@ def runRound():
         if(playerID == ht_playerID):
             playerID = greedy_trained_player_ID
         elif(playerID == greedy_trained_player_ID):
+            playerID = LR_player_ID
+        elif(playerID == LR_player_ID):
             playerID = greedy_player_ID
         else:
             playerID = ht_playerID
@@ -414,6 +420,9 @@ def runRound():
             elif(playerID == greedy_trained_player_ID):
                 # print("GREEDY TRAINED DIED")
                 createPlayer("greedy_trained", playerID)
+            elif(playerID == LR_player_ID):
+                # print("GREEDY TRAINED DIED")
+                createPlayer("Logical Regression", playerID)
             else:
                 # print("GREEDY DIED")
                 createPlayer("greedy", playerID)
@@ -430,6 +439,8 @@ def runRound():
                 action =  clf_human.predict(observation__.reshape(1, -1))[0]
             elif(playerID == greedy_trained_player_ID):
                 action =  clf.predict(observation__.reshape(1, -1))[0]
+            elif(playerID == LR_player_ID): 
+                action =  LR_human.predict(observation__.reshape(1, -1))[0]
             else:
                 action = evaluateStateGREEDY(sectors)
             action = int(action)
@@ -487,7 +498,10 @@ X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(
 
 
 clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(32, 16), random_state=1)
-clf.fit(X_train, Y_train)                         
+clf.fit(X_train, Y_train)    
+
+LR_human = LogisticRegression()
+LR_human.fit(X_train, Y_train)                     
 
 numRounds = 10
 print("Start")
