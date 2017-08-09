@@ -11,17 +11,6 @@ import csv
 import hungry_bot as hb
 from sklearn.neural_network import MLPClassifier
 import pandas
-import matplotlib.pyplot as plt
-from sklearn import model_selection
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC
 
 # SERVER CONFIG:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -30,12 +19,6 @@ domain = "http://localhost:3000"
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 bot_name = "Q_bot"
 
-# Q-LEARNING AND STATE INFO:
-# ///////////////////////////////////////////////////////////////////////////////////////////
-
-memory = list()
-current_state = list()
-previous_state = list()
 
 # HYPERPARAMETERS:
 # ///////////////////////////////////////////////////////////////////////////////////////////
@@ -46,15 +29,10 @@ MAX_FOOD_LEVEL = 10     # Specifies range [0, MAX_FOOD_LEVEL]   for food scaling
 REWARD_FOR_EATING = 10
 REWARD_FOR_DYING = -100
 DEATH_PENALTY = -500    # Value of reward for actions that lead to death
-GAMMA = 0.9             # Q-learning discount rate
-EPSILON = 1             # Q-learning exploration rate
 
 previousLargestMass = 10 
 previousTotalMass = 10
 
-LR = 0.001
-score_requirement = 40
-initalGames = 10
 # FUNCTIONS:
 # ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -365,66 +343,13 @@ def formatSectorsForLearning(sectorArray):
     return [threatArray, foodArray]
 
 def writeToCSV(learningInformation):
-    csvFile = "human_learningData.csv"
+    csvFile = "human_learningData123.csv"
 
     with open(csvFile, "a") as output:
         writer = csv.writer(output)
         writer.writerow(learningInformation)   
 
-def runRound():
-    global clf
-    first = True
-    playerID = 420 + random.randint(0,10)
-    createPlayer("testBot" + str(playerID), playerID)
-    tick_limit = 500000
-    hb.createPlayer()
-    learningInformation = list()
-    previousOberservation = list()
-    numStaticBots = 10
-    createStaticBots(numStaticBots)
 
-    for tick in range (tick_limit):
-        hb.findFood()
-        sectors, massDelta = getState(playerID)
-        reward_v = reward(sectors, massDelta)
-
-        if(reward_v == REWARD_FOR_DYING):
-            #respawn
-            print("loss")
-            break;
-            createPlayer("testBot" + str(playerID), playerID)
-            previousLargestMass = 10 
-            previousTotalMass = 10
-            time.sleep(0.5)
-            sectors, massDelta = getState(playerID)
-        else:
-            threatAndFoodArrays = formatSectorsForLearning(sectors)
-            observation = threatAndFoodArrays[0] + threatAndFoodArrays[1]
-            observation__ = np.array(observation)
-            print(observation__)
-            action =  clf.predict(observation__.reshape(1, -1))[0]
-            action = int(action)
-            print(action)
-            #evaluateStateGREEDY(sectors)
-
-        learningInformation = list()
-        observation = threatAndFoodArrays[0] + threatAndFoodArrays[1]
-        
-        if(len(previousOberservation) > 0):
-            learningInformation = previousOberservation + [prevousAction] + [reward_v] + observation 
-            # writeToCSV(learningInformation)
-            
-
-
-        previousOberservation = observation
-        prevousAction = action
-        move(playerID, action, len(sectors) + 1)
-
-        time.sleep(0.1)
-
-    removePlayer("testBot" + str(playerID), playerID)
-    hb.removePlayer()
-    removeStaticBots(numStaticBots)
 
 ###############################################
 previous_x = 0
